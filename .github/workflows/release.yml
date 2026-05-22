@@ -1,0 +1,91 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate release version
+        run: |
+          set -euo pipefail
+
+          VERSION="${GITHUB_REF_NAME#v}"
+          PLUGIN_VERSION="$(awk -F: '/^[[:space:]]*\*[[:space:]]*Version:/ { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit }' velo-glossary.php)"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+
+          if [ -z "$VERSION" ]; then
+            echo "Could not determine version from tag ${GITHUB_REF_NAME}."
+            exit 1
+          fi
+
+          if [ "$VERSION" != "$PLUGIN_VERSION" ]; then
+            echo "Tag version ${VERSION} does not match plugin header version ${PLUGIN_VERSION}."
+            exit 1
+          fi
+
+          if [ "$VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "Tag version ${VERSION} does not match package.json version ${PACKAGE_VERSION}."
+            exit 1
+          fi
+
+      - name: Build plugin ZIP
+        id: build
+        run: |
+          set -euo pipefail
+
+          PLUGIN_SLUG="velo-glossary"
+          VERSION="${GITHUB_REF_NAME#v}"
+          DIST_DIR="dist"
+          BUILD_DIR="${DIST_DIR}/${PLUGIN_SLUG}"
+          ZIP_NAME="${PLUGIN_SLUG}-${VERSION}.zip"
+
+          rm -rf "$DIST_DIR"
+          mkdir -p "$BUILD_DIR"
+
+          rsync -a \
+            --exclude-from=.distignore \
+            --exclude='.git' \
+            --exclude='.github' \
+            ./ "$BUILD_DIR"/
+
+          ( cd "$DIST_DIR" && zip -qr "$ZIP_NAME" "$PLUGIN_SLUG" )
+
+          unzip -l "${DIST_DIR}/${ZIP_NAME}"
+          echo "zip-path=${DIST_DIR}/${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          ZIP_PATH="${{ steps.build.outputs.zip-path }}"
+          TITLE="Velo Glossary ${VERSION}"
+          NOTES_FILE="${RUNNER_TEMP}/release-notes.md"
+
+          cat > "$NOTES_FILE" <<EOF
+          Velo Glossary ${VERSION}
+
+          Download and install the attached \`velo-glossary-${VERSION}.zip\`.
+          EOF
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
+            gh release upload "$TAG" "$ZIP_PATH" --clobber
+          else
+            gh release create "$TAG" "$ZIP_PATH" --title "$TITLE" --notes-file "$NOTES_FILE"
+          fi

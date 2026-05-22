@@ -3,6 +3,7 @@
 .editorconfig
 .git
 .gitignore
+.github
 .gitlab-ci.yml
 .travis.yml
 .DS_Store
@@ -11,6 +12,7 @@ behat.yml
 bitbucket-pipelines.yml
 bin
 .circleci/config.yml
+docker-compose.yml
 composer.json
 composer.lock
 Gruntfile.js
@@ -27,6 +29,7 @@ phpcs.xml.dist
 README.md
 wp-cli.local.yml
 yarn.lock
+dist
 tests
 vendor
 node_modules

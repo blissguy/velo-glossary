@@ -20,3 +20,14 @@ The plugin ships browser-ready assets from:
 
 - `tippy.js` 6.3.7
 - `@popperjs/core` 2.11.8
+
+## Releases
+
+GitHub releases are created from version tags. Before tagging, make sure the `Version` header in `velo-glossary.php` and the `package.json` version match.
+
+```bash
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+The release workflow builds a WordPress-installable `velo-glossary-X.Y.Z.zip` file with the `velo-glossary/` plugin folder inside and attaches it to the GitHub release.
