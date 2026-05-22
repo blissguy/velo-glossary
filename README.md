@@ -1,6 +1,6 @@
 # Velo Glossary
 
-Velo Glossary is a MixBus Marketing-maintained fork of WordPress.org Glossary. It keeps the existing `glossary` post type and hovercard markup while updating tooltip dependencies and adding settings for where glossary terms should be processed.
+Velo Glossary is a [MixBus Marketing](https://mixbusmarketing.com)-maintained fork of WordPress.org Glossary. It keeps the existing `glossary` post type and hovercard markup while updating tooltip dependencies and adding settings for where glossary terms should be processed.
 
 ## Loading Rules
 

@@ -3,6 +3,7 @@
  * Plugin Name:     Velo Glossary
  * Description:     Interactive glossary with configurable loading rules and content associations.
  * Author:          MixBus Marketing
+ * Author URI:      https://mixbusmarketing.com
  * Text Domain:     velo-glossary
  * Version:         1.4.0
  * License:         GPLv2 or later
