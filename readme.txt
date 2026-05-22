@@ -3,7 +3,7 @@ Contributors: mixbusmarketing
 Tags: glossary
 Requires at least: 5.3.1
 Tested up to: 7.0
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,9 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.4.1 =
+* Scoped tooltip styling to the Velo Glossary Tippy theme and BEM classes.
 
 = 1.4.0 =
 * Added queryable associated content relationships for glossary entries.
