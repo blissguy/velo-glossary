@@ -9,8 +9,22 @@ jQuery( document ).ready( function ( $ ) {
 			content: tooltipContent,
 			allowHTML: true,
 			arrow: true,
-			theme: 'light',
+			theme: 'velo-glossary',
 			delay: [0, 500],
+			onCreate: function(instance) {
+				var box = instance.popper.querySelector( '.tippy-box' );
+				var content = instance.popper.querySelector( '.tippy-content' );
+
+				instance.popper.classList.add( 'velo-glossary__tippy-popper' );
+
+				if ( box ) {
+					box.classList.add( 'velo-glossary__tippy-box' );
+				}
+
+				if ( content ) {
+					content.classList.add( 'velo-glossary__tippy-content' );
+				}
+			},
 			onShow: function(instance) {
 				for (var i = 0; i < tooltips.length; i++) {
 					if ( instance !== tooltips[i] ) {

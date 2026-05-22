@@ -57,11 +57,11 @@ class Velo_Glossary_Handler {
 		}
 		is_multisite() && restore_current_blog();
 
-		$term_html = "<span class='glossary-item-header'>" . esc_html( $glossary_item->name ) . "</span> <span class='glossary-item-description'>$desc_html</span>";
+		$term_html = "<span class='glossary-item-header velo-glossary__header'>" . esc_html( $glossary_item->name ) . "</span> <span class='glossary-item-description velo-glossary__description'>$desc_html</span>";
 
 		$replacement = sprintf(
 			// NOTE: When altering this HTML, please update the relevant code in Velo_Glossary_Handler::link_glossary_terms().
-			"<span tabindex='0' class='glossary-item-container'>%s<span class='glossary-item-hidden-content'>%s</span></span>",
+			"<span tabindex='0' class='glossary-item-container velo-glossary__term'>%s<span class='glossary-item-hidden-content velo-glossary__hidden-content'>%s</span></span>",
 			esc_html( $found_text ),
 			$term_html
 		);
