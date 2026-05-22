@@ -1,6 +1,12 @@
 name: Create Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without the leading v. Example: 1.4.1'
+        required: true
+        type: string
   push:
     tags:
       - 'v*'
@@ -17,16 +23,36 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Validate release version
+      - name: Resolve and validate release version
+        id: release-meta
         run: |
           set -euo pipefail
 
-          VERSION="${GITHUB_REF_NAME#v}"
+          INPUT_VERSION="${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}"
+
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="${INPUT_VERSION#v}"
+          else
+            case "$GITHUB_REF_NAME" in
+              v*) VERSION="${GITHUB_REF_NAME#v}" ;;
+              *)
+                echo "This workflow must run from a v* tag or a manual version input."
+                exit 1
+                ;;
+            esac
+          fi
+
+          TAG="v${VERSION}"
           PLUGIN_VERSION="$(awk -F: '/^[[:space:]]*\*[[:space:]]*Version:/ { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit }' velo-glossary.php)"
           PACKAGE_VERSION="$(node -p "require('./package.json').version")"
 
           if [ -z "$VERSION" ]; then
-            echo "Could not determine version from tag ${GITHUB_REF_NAME}."
+            echo "Could not determine a release version."
+            exit 1
+          fi
+
+          if [[ ! "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,3}([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Version ${VERSION} is not a valid release version."
             exit 1
           fi
 
@@ -40,13 +66,16 @@ jobs:
             exit 1
           fi
 
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Build plugin ZIP
         id: build
         run: |
           set -euo pipefail
 
           PLUGIN_SLUG="velo-glossary"
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ steps.release-meta.outputs.version }}"
           DIST_DIR="dist"
           BUILD_DIR="${DIST_DIR}/${PLUGIN_SLUG}"
           ZIP_NAME="${PLUGIN_SLUG}-${VERSION}.zip"
@@ -71,8 +100,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
+          TAG="${{ steps.release-meta.outputs.tag }}"
+          VERSION="${{ steps.release-meta.outputs.version }}"
           ZIP_PATH="${{ steps.build.outputs.zip-path }}"
           TITLE="Velo Glossary ${VERSION}"
           NOTES_FILE="${RUNNER_TEMP}/release-notes.md"
@@ -87,5 +116,5 @@ jobs:
             gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
             gh release upload "$TAG" "$ZIP_PATH" --clobber
           else
-            gh release create "$TAG" "$ZIP_PATH" --title "$TITLE" --notes-file "$NOTES_FILE"
+            gh release create "$TAG" "$ZIP_PATH" --title "$TITLE" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
           fi
