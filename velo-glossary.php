@@ -1,0 +1,26 @@
+<?php
+/**
+ * Plugin Name:     Velo Glossary
+ * Description:     Interactive glossary with configurable loading rules and content associations.
+ * Author:          MixBus Marketing
+ * Text Domain:     velo-glossary
+ * Version:         1.4.0
+ * License:         GPLv2 or later
+ * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
+ * Update URI:      false
+ *
+ * @package         Velo_Glossary
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+require_once __DIR__ . '/includes/class-velo-glossary.php';
+require_once __DIR__ . '/includes/class-velo-glossary-settings.php';
+require_once __DIR__ . '/includes/class-velo-glossary-admin.php';
+require_once __DIR__ . '/includes/class-velo-glossary-hovercards.php';
+require_once __DIR__ . '/includes/class-velo-glossary-handler.php';
+
+new Velo_Glossary_Settings();
+new Velo_Glossary_Admin();
+new Velo_Glossary_Hovercards();
+new Velo_Glossary_Handler();
