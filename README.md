@@ -23,13 +23,6 @@ The plugin ships browser-ready assets from:
 
 ## Releases
 
-GitHub releases are created from version tags. Before tagging, make sure the `Version` header in `velo-glossary.php` and the `package.json` version match.
+GitHub releases are created automatically when a new version is pushed to `main`. Before pushing a release commit, make sure the `Version` header in `velo-glossary.php` and the `package.json` version match.
 
-```bash
-git tag vX.Y.Z
-git push origin vX.Y.Z
-```
-
-You can also run **Actions > Create Release > Run workflow** from GitHub and enter `X.Y.Z` in the version field.
-
-The release workflow builds a WordPress-installable `velo-glossary-X.Y.Z.zip` file with the `velo-glossary/` plugin folder inside and attaches it to the GitHub release.
+If release `vX.Y.Z` does not already exist, the workflow creates the tag, builds a WordPress-installable `velo-glossary-X.Y.Z.zip` file with the `velo-glossary/` plugin folder inside, and attaches it to the GitHub release.

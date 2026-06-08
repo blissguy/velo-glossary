@@ -1,15 +1,8 @@
-name: Create Release
+name: Release on version bump
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release, without the leading v. Example: 1.4.1'
-        required: true
-        type: string
   push:
-    tags:
-      - 'v*'
+    branches: [ main ]
 
 permissions:
   contents: write
@@ -23,31 +16,19 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Resolve and validate release version
-        id: release-meta
+      - name: Read plugin version from header
+        id: ver
         run: |
           set -euo pipefail
 
-          INPUT_VERSION="${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}"
-
-          if [ -n "$INPUT_VERSION" ]; then
-            VERSION="${INPUT_VERSION#v}"
-          else
-            case "$GITHUB_REF_NAME" in
-              v*) VERSION="${GITHUB_REF_NAME#v}" ;;
-              *)
-                echo "This workflow must run from a v* tag or a manual version input."
-                exit 1
-                ;;
-            esac
-          fi
-
-          TAG="v${VERSION}"
-          PLUGIN_VERSION="$(awk -F: '/^[[:space:]]*\*[[:space:]]*Version:/ { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit }' velo-glossary.php)"
+          VERSION="$(grep -iE '^[[:space:]]*\*[[:space:]]*Version:' velo-glossary.php \
+            | head -1 \
+            | sed -E 's/.*Version:[[:space:]]*//' \
+            | tr -d '[:space:]\r')"
           PACKAGE_VERSION="$(node -p "require('./package.json').version")"
 
           if [ -z "$VERSION" ]; then
-            echo "Could not determine a release version."
+            echo "Could not find a Version header. Aborting."
             exit 1
           fi
 
@@ -56,31 +37,41 @@ jobs:
             exit 1
           fi
 
-          if [ "$VERSION" != "$PLUGIN_VERSION" ]; then
-            echo "Tag version ${VERSION} does not match plugin header version ${PLUGIN_VERSION}."
-            exit 1
-          fi
-
           if [ "$VERSION" != "$PACKAGE_VERSION" ]; then
-            echo "Tag version ${VERSION} does not match package.json version ${PACKAGE_VERSION}."
+            echo "Plugin header version ${VERSION} does not match package.json version ${PACKAGE_VERSION}."
             exit 1
           fi
 
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Detected version: ${VERSION}"
+
+      - name: Check whether this release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "${{ steps.ver.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release ${{ steps.ver.outputs.tag }} already exists. Skipping."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build plugin ZIP
+        if: steps.check.outputs.exists == 'false'
         id: build
         run: |
           set -euo pipefail
 
           PLUGIN_SLUG="velo-glossary"
-          VERSION="${{ steps.release-meta.outputs.version }}"
-          DIST_DIR="dist"
-          BUILD_DIR="${DIST_DIR}/${PLUGIN_SLUG}"
+          VERSION="${{ steps.ver.outputs.version }}"
+          BUILD_DIR="build/${PLUGIN_SLUG}"
           ZIP_NAME="${PLUGIN_SLUG}-${VERSION}.zip"
 
-          rm -rf "$DIST_DIR"
+          rm -rf build "$ZIP_NAME"
           mkdir -p "$BUILD_DIR"
 
           rsync -a \
@@ -89,32 +80,24 @@ jobs:
             --exclude='.github' \
             ./ "$BUILD_DIR"/
 
-          ( cd "$DIST_DIR" && zip -qr "$ZIP_NAME" "$PLUGIN_SLUG" )
+          ( cd build && zip -rq "../${ZIP_NAME}" "$PLUGIN_SLUG" )
 
-          unzip -l "${DIST_DIR}/${ZIP_NAME}"
-          echo "zip-path=${DIST_DIR}/${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+          unzip -l "$ZIP_NAME"
+          echo "zip-name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
 
-      - name: Publish GitHub release
+      - name: Create the release
+        if: steps.check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
-          TAG="${{ steps.release-meta.outputs.tag }}"
-          VERSION="${{ steps.release-meta.outputs.version }}"
-          ZIP_PATH="${{ steps.build.outputs.zip-path }}"
-          TITLE="Velo Glossary ${VERSION}"
-          NOTES_FILE="${RUNNER_TEMP}/release-notes.md"
+          VERSION="${{ steps.ver.outputs.version }}"
+          TAG="${{ steps.ver.outputs.tag }}"
+          ZIP_NAME="${{ steps.build.outputs.zip-name }}"
 
-          cat > "$NOTES_FILE" <<EOF
-          Velo Glossary ${VERSION}
-
-          Download and install the attached \`velo-glossary-${VERSION}.zip\`.
-          EOF
-
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
-            gh release upload "$TAG" "$ZIP_PATH" --clobber
-          else
-            gh release create "$TAG" "$ZIP_PATH" --title "$TITLE" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
-          fi
+          gh release create "$TAG" \
+            "$ZIP_NAME" \
+            --target "$GITHUB_SHA" \
+            --title "Velo Glossary ${VERSION}" \
+            --notes "Automated release for version ${VERSION}. See readme.txt changelog for details."
