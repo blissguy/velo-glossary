@@ -215,6 +215,23 @@ class Velo_Glossary {
 	}
 
 	/**
+	 * Replace all associated content meta rows for a glossary entry.
+	 *
+	 * @param int   $glossary_id Glossary post ID.
+	 * @param array $post_ids Associated content post IDs.
+	 */
+	public static function set_associated_post_ids( $glossary_id, $post_ids ) {
+		$glossary_id = absint( $glossary_id );
+		$post_ids    = array_values( array_unique( array_filter( array_map( 'absint', $post_ids ) ) ) );
+
+		delete_post_meta( $glossary_id, self::ASSOCIATED_POST_META );
+
+		foreach ( $post_ids as $post_id ) {
+			add_post_meta( $glossary_id, self::ASSOCIATED_POST_META, $post_id, false );
+		}
+	}
+
+	/**
 	 * Get glossary entry IDs related to another glossary entry.
 	 *
 	 * @param int $glossary_id Glossary post ID.
@@ -231,6 +248,55 @@ class Velo_Glossary {
 		);
 
 		return array_values( array_unique( $term_ids ) );
+	}
+
+	/**
+	 * Save related term IDs and mirror the relationship on the related terms.
+	 *
+	 * @param int   $glossary_id Glossary post ID.
+	 * @param array $new_related_ids Related glossary term IDs.
+	 */
+	public static function set_related_term_ids( $glossary_id, $new_related_ids ) {
+		$glossary_id     = absint( $glossary_id );
+		$new_related_ids = array_values( array_unique( array_map( 'absint', $new_related_ids ) ) );
+		$old_related_ids = self::get_related_term_ids( $glossary_id );
+		$all_related_ids = array_values( array_unique( array_merge( $old_related_ids, $new_related_ids ) ) );
+
+		self::replace_related_term_meta( $glossary_id, $new_related_ids );
+
+		foreach ( $all_related_ids as $related_id ) {
+			$related_ids = self::get_related_term_ids( $related_id );
+
+			if ( in_array( $related_id, $new_related_ids, true ) ) {
+				$related_ids[] = $glossary_id;
+			} else {
+				$related_ids = array_diff( $related_ids, array( $glossary_id ) );
+			}
+
+			self::replace_related_term_meta( $related_id, $related_ids );
+		}
+	}
+
+	/**
+	 * Replace all related term meta rows for a glossary entry.
+	 *
+	 * @param int   $glossary_id Glossary post ID.
+	 * @param array $related_ids Related glossary term IDs.
+	 */
+	public static function replace_related_term_meta( $glossary_id, $related_ids ) {
+		$glossary_id = absint( $glossary_id );
+		$related_ids = array_filter(
+			array_values( array_unique( array_map( 'absint', $related_ids ) ) ),
+			function( $related_id ) use ( $glossary_id ) {
+				return $related_id && $related_id !== $glossary_id && 'glossary' === get_post_type( $related_id );
+			}
+		);
+
+		delete_post_meta( $glossary_id, self::RELATED_TERM_META );
+
+		foreach ( $related_ids as $related_id ) {
+			add_post_meta( $glossary_id, self::RELATED_TERM_META, $related_id, false );
+		}
 	}
 
 	/**

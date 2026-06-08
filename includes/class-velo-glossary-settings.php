@@ -139,6 +139,7 @@ class Velo_Glossary_Settings {
 				submit_button();
 				?>
 			</form>
+			<?php do_action( 'velo_glossary_after_settings_page' ); ?>
 		</div>
 		<?php
 	}

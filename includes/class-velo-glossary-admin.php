@@ -483,11 +483,7 @@ class Velo_Glossary_Admin {
 			}
 		);
 
-		delete_post_meta( $post_id, Velo_Glossary::ASSOCIATED_POST_META );
-
-		foreach ( $associated_post_ids as $associated_post_id ) {
-			add_post_meta( $post_id, Velo_Glossary::ASSOCIATED_POST_META, $associated_post_id, false );
-		}
+		Velo_Glossary::set_associated_post_ids( $post_id, $associated_post_ids );
 	}
 
 	/**
@@ -521,7 +517,7 @@ class Velo_Glossary_Admin {
 			}
 		);
 
-		$this->sync_related_term_ids( $post_id, $related_term_ids );
+		Velo_Glossary::set_related_term_ids( $post_id, $related_term_ids );
 	}
 
 	/**
@@ -537,7 +533,7 @@ class Velo_Glossary_Admin {
 
 		foreach ( Velo_Glossary::get_related_term_ids( $post_id ) as $related_id ) {
 			$related_ids = array_diff( Velo_Glossary::get_related_term_ids( $related_id ), array( absint( $post_id ) ) );
-			$this->replace_related_term_meta( $related_id, $related_ids );
+			Velo_Glossary::replace_related_term_meta( $related_id, $related_ids );
 		}
 	}
 
@@ -717,6 +713,16 @@ class Velo_Glossary_Admin {
 	 * @return bool
 	 */
 	protected function is_associable_post( $post ) {
+		return self::is_associable_post_for_user( $post );
+	}
+
+	/**
+	 * Determine whether the current user can associate a post with a glossary entry.
+	 *
+	 * @param WP_Post|null $post Post object.
+	 * @return bool
+	 */
+	public static function is_associable_post_for_user( $post ) {
 		if ( ! $post instanceof WP_Post ) {
 			return false;
 		}
@@ -737,6 +743,17 @@ class Velo_Glossary_Admin {
 	 * @return bool
 	 */
 	protected function is_related_term_candidate( $post, $current_post_id = 0 ) {
+		return self::is_related_term_candidate_for_user( $post, $current_post_id );
+	}
+
+	/**
+	 * Determine whether the current user can relate a glossary entry to another.
+	 *
+	 * @param WP_Post|null $post Current candidate post.
+	 * @param int          $current_post_id Current glossary post ID.
+	 * @return bool
+	 */
+	public static function is_related_term_candidate_for_user( $post, $current_post_id = 0 ) {
 		if ( ! $post instanceof WP_Post || 'glossary' !== $post->post_type ) {
 			return false;
 		}
@@ -746,54 +763,5 @@ class Velo_Glossary_Admin {
 		}
 
 		return current_user_can( 'edit_post', $post->ID );
-	}
-
-	/**
-	 * Save related term IDs and mirror the relationship on the related terms.
-	 *
-	 * @param int   $post_id Current glossary post ID.
-	 * @param array $new_related_ids Related glossary term IDs.
-	 */
-	protected function sync_related_term_ids( $post_id, $new_related_ids ) {
-		$post_id         = absint( $post_id );
-		$new_related_ids = array_values( array_unique( array_map( 'absint', $new_related_ids ) ) );
-		$old_related_ids = Velo_Glossary::get_related_term_ids( $post_id );
-		$all_related_ids = array_values( array_unique( array_merge( $old_related_ids, $new_related_ids ) ) );
-
-		$this->replace_related_term_meta( $post_id, $new_related_ids );
-
-		foreach ( $all_related_ids as $related_id ) {
-			$related_ids = Velo_Glossary::get_related_term_ids( $related_id );
-
-			if ( in_array( $related_id, $new_related_ids, true ) ) {
-				$related_ids[] = $post_id;
-			} else {
-				$related_ids = array_diff( $related_ids, array( $post_id ) );
-			}
-
-			$this->replace_related_term_meta( $related_id, $related_ids );
-		}
-	}
-
-	/**
-	 * Replace all related term meta rows for a glossary entry.
-	 *
-	 * @param int   $post_id Current glossary post ID.
-	 * @param array $related_ids Related glossary term IDs.
-	 */
-	protected function replace_related_term_meta( $post_id, $related_ids ) {
-		$post_id     = absint( $post_id );
-		$related_ids = array_filter(
-			array_values( array_unique( array_map( 'absint', $related_ids ) ) ),
-			function( $related_id ) use ( $post_id ) {
-				return $related_id && $related_id !== $post_id && 'glossary' === get_post_type( $related_id );
-			}
-		);
-
-		delete_post_meta( $post_id, Velo_Glossary::RELATED_TERM_META );
-
-		foreach ( $related_ids as $related_id ) {
-			add_post_meta( $post_id, Velo_Glossary::RELATED_TERM_META, $related_id, false );
-		}
 	}
 }

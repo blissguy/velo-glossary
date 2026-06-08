@@ -3,7 +3,7 @@ Contributors: mixbusmarketing
 Tags: glossary
 Requires at least: 5.3.1
 Tested up to: 7.0
-Stable tag: 1.5.3
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,6 +19,8 @@ Glossary entries can also be associated with specific posts, pages, or public cu
 
 Glossary entries support glossary-only tags through the `velo_glossary_tag` taxonomy. Entries can also be connected to related glossary terms with repeatable `_velo_glossary_related_term_id` post meta stored bidirectionally for normal `WP_Query` usage.
 
+CSV tools are available under Settings > Velo Glossary. Administrators can download a sample template, export current glossary entries, upload a CSV for preview, and confirm an import that creates or updates terms by exact title.
+
 == Installation ==
 
 To use the plugin, install and activate it, then visit the Glossary section in your wp-admin dashboard to begin adding glossary terms. Use Settings > Velo Glossary to adjust where glossary terms are processed.
@@ -28,6 +30,11 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.6.0 =
+* Added CSV sample download, full export, preview import, and confirmed import tools under Settings > Velo Glossary.
+* Imports create or update glossary terms by exact title and report ignored columns plus invalid relationship IDs.
+* CSV relationship fields support numeric associated content IDs and bidirectional related term IDs.
 
 = 1.5.3 =
 * Fixed hovercard skip detection when rendered glossary wrappers include multiple classes.
