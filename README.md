@@ -20,6 +20,8 @@ Glossary entries support a dedicated `velo_glossary_tag` taxonomy named **Glossa
 
 Glossary entries can also be connected to other glossary entries through the **Related Terms** metabox. Related terms are stored as repeatable `_velo_glossary_related_term_id` post meta rows and mirrored both ways, so a relationship between term A and term B can be queried from either term.
 
+Relationship meta is intentionally not exposed through generic REST meta updates. The admin save paths validate each selected target before saving, while the stored meta remains available for normal `WP_Query` and builder queries.
+
 ## Dependencies
 
 The plugin ships browser-ready assets from:
