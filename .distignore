@@ -31,8 +31,8 @@ wp-cli.local.yml
 yarn.lock
 dist
 tests
-vendor
-node_modules
+/vendor
+/node_modules
 *.sql
 *.tar.gz
 *.zip

@@ -3,7 +3,7 @@ Contributors: mixbusmarketing
 Tags: glossary
 Requires at least: 5.3.1
 Tested up to: 7.0
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,6 +28,9 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.5.1 =
+* Added GitHub release update checks for non-WordPress.org installs.
 
 = 1.5.0 =
 * Added glossary-only tags for organizing glossary entries.

@@ -26,9 +26,12 @@ The plugin ships browser-ready assets from:
 
 - `tippy.js` 6.3.7
 - `@popperjs/core` 2.11.8
+- `plugin-update-checker` 5.6
 
 ## Releases
 
 GitHub releases are created automatically when a new version is pushed to `main`. Before pushing a release commit, make sure the `Version` header in `velo-glossary.php` and the `package.json` version match.
 
 If release `vX.Y.Z` does not already exist, the workflow creates the tag, builds a WordPress-installable `velo-glossary-X.Y.Z.zip` file with the `velo-glossary/` plugin folder inside, and attaches it to the GitHub release.
+
+Installed copies use Plugin Update Checker to read GitHub releases from `blissguy/velo-glossary` and install the attached release ZIP through the normal WordPress updates UI.
