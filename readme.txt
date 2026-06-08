@@ -1,9 +1,10 @@
 === Velo Glossary ===
 Contributors: mixbusmarketing
 Tags: glossary
-Requires at least: 5.3.1
+Requires at least: 6.9
+Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +22,8 @@ Glossary entries support glossary-only tags through the `velo_glossary_tag` taxo
 
 CSV tools are available under Settings > Velo Glossary. Administrators can download a sample template, export current glossary entries, upload a CSV for preview, and confirm an import that creates or updates terms by exact title.
 
+Velo Glossary requires WordPress 6.9 or newer and PHP 8.0 or newer. It registers Abilities API tools for agent-friendly glossary term listing, retrieval, creation, updating, and trashing. CSV import/export remains admin UI only.
+
 == Installation ==
 
 To use the plugin, install and activate it, then visit the Glossary section in your wp-admin dashboard to begin adding glossary terms. Use Settings > Velo Glossary to adjust where glossary terms are processed.
@@ -30,6 +33,12 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.7.0 =
+* Raised minimum support to WordPress 6.9 and PHP 8.0.
+* Added WordPress Abilities API tools for listing, reading, saving, and trashing glossary terms.
+* Fixed CSV downloads on modern PHP by explicitly passing the fputcsv escape parameter.
+* Exported raw stored glossary titles and definitions instead of display-filtered values.
 
 = 1.6.0 =
 * Added CSV sample download, full export, preview import, and confirmed import tools under Settings > Velo Glossary.

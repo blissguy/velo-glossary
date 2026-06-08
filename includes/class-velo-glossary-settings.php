@@ -393,6 +393,7 @@ class Velo_Glossary_Settings {
 				'no_found_rows'          => true,
 				'update_post_meta_cache' => false,
 				'update_post_term_cache' => false,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Settings page warning needs to find glossary entries that use associated content meta.
 				'meta_key'               => Velo_Glossary::ASSOCIATED_POST_META,
 			)
 		);

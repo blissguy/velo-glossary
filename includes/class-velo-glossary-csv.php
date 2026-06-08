@@ -126,8 +126,8 @@ class Velo_Glossary_CSV {
 			}
 
 			$rows[] = array(
-				get_the_title( $post ),
-				$post->post_content,
+				get_post_field( 'post_title', $post->ID, 'raw' ),
+				get_post_field( 'post_content', $post->ID, 'raw' ),
 				$post->post_status,
 				implode( ', ', $alternatives ),
 				implode( ', ', $tag_names ),
@@ -987,7 +987,7 @@ class Velo_Glossary_CSV {
 
 		$output = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- CSV downloads must stream to php://output.
 		foreach ( $rows as $row ) {
-			fputcsv( $output, $row );
+			fputcsv( $output, $row, ',', '"', '\\' );
 		}
 		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closes the CSV download stream.
 		exit;
