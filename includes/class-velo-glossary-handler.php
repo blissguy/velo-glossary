@@ -151,7 +151,7 @@ class Velo_Glossary_Handler {
 				}
 
 				// Skip the Glossary item container span, for when the_content is run over the_content.
-				if ( $matches && 'span' == $matches[0] && false !== strpos( $element, "class='glossary-item-container'" ) ) {
+				if ( $matches && 'span' === $matches[0] && $this->element_has_class( $element, 'glossary-item-container' ) ) {
 					if ( ! $is_end_tag ) {
 						array_unshift( $inside_block, $matches[0] );
 					} elseif ( $inside_block && $matches[0] === $inside_block[0] ) {
@@ -176,5 +176,18 @@ class Velo_Glossary_Handler {
 		$this->context_post_id = null;
 
 		return join( $textarr );
+	}
+
+	/**
+	 * Determine whether an HTML element has a class token.
+	 *
+	 * @param string $element HTML element fragment.
+	 * @param string $class_name Class name to search for.
+	 * @return bool
+	 */
+	protected function element_has_class( $element, $class_name ) {
+		$class_name = preg_quote( $class_name, '/' );
+
+		return (bool) preg_match( '/\sclass=(["\'])(?=[^"\']*\b' . $class_name . '\b)[^"\']*\1/i', $element );
 	}
 }

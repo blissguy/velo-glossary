@@ -1,6 +1,6 @@
 {
   "name": "velo-glossary",
-	"version": "1.5.2",
+	"version": "1.5.3",
   "main": "Gruntfile.js",
   "author": "MixBus Marketing",
   "scripts": {
