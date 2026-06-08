@@ -10,14 +10,19 @@ class Velo_Glossary_Admin {
 	public function __construct() {
 		// Must be after Handbooks Glossary loaded on init priority 10
 		add_action( 'init', array( $this, 'register_post_type' ), 100 );
-		add_action( 'init', array( $this, 'register_association_meta' ), 101 );
+		add_action( 'init', array( $this, 'register_glossary_taxonomy' ), 101 );
+		add_action( 'init', array( $this, 'register_association_meta' ), 102 );
+		add_action( 'init', array( $this, 'register_related_term_meta' ), 103 );
 
 		add_action( 'add_meta_boxes', array( $this, 'register_glossary_metaboxes' ) );
 		add_action( 'edit_form_after_title', array( $this, 'form_after_title' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'wp_ajax_velo_glossary_search_content', array( $this, 'ajax_search_content' ) );
+		add_action( 'wp_ajax_velo_glossary_search_terms', array( $this, 'ajax_search_terms' ) );
 		add_action( 'save_post_glossary', array( $this, 'save_alternatives_metabox' ) );
 		add_action( 'save_post_glossary', array( $this, 'save_associations_metabox' ) );
+		add_action( 'save_post_glossary', array( $this, 'save_related_terms_metabox' ) );
+		add_action( 'before_delete_post', array( $this, 'remove_deleted_glossary_term_relationships' ), 10, 2 );
 	}
 
 	/**
@@ -56,6 +61,47 @@ class Velo_Glossary_Admin {
 	}
 
 	/**
+	 * Register glossary-only tags for organizing and querying terms.
+	 */
+	public function register_glossary_taxonomy() {
+		if ( taxonomy_exists( Velo_Glossary::TAG_TAXONOMY ) ) {
+			register_taxonomy_for_object_type( Velo_Glossary::TAG_TAXONOMY, 'glossary' );
+			return;
+		}
+
+		register_taxonomy(
+			Velo_Glossary::TAG_TAXONOMY,
+			'glossary',
+			array(
+				'labels'            => array(
+					'name'                       => _x( 'Glossary Tags', 'taxonomy general name', 'velo-glossary' ),
+					'singular_name'              => _x( 'Glossary Tag', 'taxonomy singular name', 'velo-glossary' ),
+					'search_items'               => __( 'Search Glossary Tags', 'velo-glossary' ),
+					'popular_items'              => __( 'Popular Glossary Tags', 'velo-glossary' ),
+					'all_items'                  => __( 'All Glossary Tags', 'velo-glossary' ),
+					'edit_item'                  => __( 'Edit Glossary Tag', 'velo-glossary' ),
+					'view_item'                  => __( 'View Glossary Tag', 'velo-glossary' ),
+					'update_item'                => __( 'Update Glossary Tag', 'velo-glossary' ),
+					'add_new_item'               => __( 'Add New Glossary Tag', 'velo-glossary' ),
+					'new_item_name'              => __( 'New Glossary Tag Name', 'velo-glossary' ),
+					'separate_items_with_commas' => __( 'Separate glossary tags with commas', 'velo-glossary' ),
+					'add_or_remove_items'        => __( 'Add or remove glossary tags', 'velo-glossary' ),
+					'choose_from_most_used'      => __( 'Choose from the most used glossary tags', 'velo-glossary' ),
+					'not_found'                  => __( 'No glossary tags found.', 'velo-glossary' ),
+					'menu_name'                  => __( 'Glossary Tags', 'velo-glossary' ),
+				),
+				'public'            => true,
+				'show_ui'           => true,
+				'show_admin_column' => true,
+				'show_in_rest'      => true,
+				'hierarchical'      => false,
+				'rewrite'           => false,
+				'query_var'         => Velo_Glossary::TAG_TAXONOMY,
+			)
+		);
+	}
+
+	/**
 	 * Register the association metadata shape.
 	 */
 	public function register_association_meta() {
@@ -65,6 +111,26 @@ class Velo_Glossary_Admin {
 			array(
 				'type'              => 'integer',
 				'description'       => __( 'Content associated with this glossary entry.', 'velo-glossary' ),
+				'single'            => false,
+				'sanitize_callback' => 'absint',
+				'auth_callback'     => static function( $allowed, $meta_key, $post_id ) {
+					return current_user_can( 'edit_post', $post_id );
+				},
+				'show_in_rest'      => true,
+			)
+		);
+	}
+
+	/**
+	 * Register related glossary term metadata.
+	 */
+	public function register_related_term_meta() {
+		register_post_meta(
+			'glossary',
+			Velo_Glossary::RELATED_TERM_META,
+			array(
+				'type'              => 'integer',
+				'description'       => __( 'Glossary entries related to this glossary entry.', 'velo-glossary' ),
 				'single'            => false,
 				'sanitize_callback' => 'absint',
 				'auth_callback'     => static function( $allowed, $meta_key, $post_id ) {
@@ -92,6 +158,15 @@ class Velo_Glossary_Admin {
 			'velo-glossary-associated-content',
 			__( 'Associated Content', 'velo-glossary' ),
 			array( $this, 'associated_content_metabox' ),
+			'glossary',
+			'advanced',
+			'default'
+		);
+
+		add_meta_box(
+			'velo-glossary-related-terms',
+			__( 'Related Terms', 'velo-glossary' ),
+			array( $this, 'related_terms_metabox' ),
 			'glossary',
 			'advanced',
 			'default'
@@ -156,6 +231,40 @@ class Velo_Glossary_Admin {
 	}
 
 	/**
+	 * Output the Related Terms metabox on the edit screen.
+	 *
+	 * @param WP_Post $post Current glossary post.
+	 */
+	public function related_terms_metabox( $post ) {
+		$related_terms = $this->get_related_term_posts( $post->ID );
+
+		wp_nonce_field( 'velo_glossary_related_terms', 'velo_glossary_related_terms_nonce' );
+		?>
+		<p><?php esc_html_e( 'Connect this glossary entry to other glossary terms. Related term links are saved both ways for easier builder and WP_Query usage.', 'velo-glossary' ); ?></p>
+		<div class="velo-glossary-related-terms-picker">
+			<label for="velo-glossary-related-terms-search"><?php esc_html_e( 'Search glossary terms', 'velo-glossary' ); ?></label>
+			<input
+				type="search"
+				id="velo-glossary-related-terms-search"
+				class="regular-text"
+				autocomplete="off"
+				placeholder="<?php esc_attr_e( 'Type a term title or ID', 'velo-glossary' ); ?>"
+				data-current-post-id="<?php echo esc_attr( $post->ID ); ?>"
+			/>
+			<p class="description"><?php esc_html_e( 'Select other glossary entries related to this term. This does not change where hovercards appear.', 'velo-glossary' ); ?></p>
+			<ul id="velo-glossary-related-terms-list" class="velo-glossary-related-terms-list">
+				<?php foreach ( $related_terms as $related_term ) : ?>
+					<?php $this->render_related_term_item( $related_term ); ?>
+				<?php endforeach; ?>
+			</ul>
+			<p class="description velo-glossary-related-terms-empty<?php echo $related_terms ? ' hidden' : ''; ?>">
+				<?php esc_html_e( 'No related terms are selected yet.', 'velo-glossary' ); ?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Enqueue admin assets for the Glossary edit screen.
 	 *
 	 * @param string $hook_suffix Current admin page hook.
@@ -174,14 +283,14 @@ class Velo_Glossary_Admin {
 			'velo-glossary-admin',
 			plugins_url( '../css/velo-glossary-admin.css', __FILE__ ),
 			array(),
-			'20260521'
+			'20260608'
 		);
 
 		wp_enqueue_script(
 			'velo-glossary-admin',
 			plugins_url( '../js/velo-glossary-admin.js', __FILE__ ),
 			array( 'jquery', 'jquery-ui-autocomplete' ),
-			'20260521',
+			'20260608',
 			true
 		);
 
@@ -242,6 +351,62 @@ class Velo_Glossary_Admin {
 				}
 
 			$results[]         = $this->format_content_result( $post );
+			$seen[ $post->ID ] = true;
+		}
+
+		wp_send_json( $results );
+	}
+
+	/**
+	 * Search glossary terms for the admin related terms autocomplete field.
+	 */
+	public function ajax_search_terms() {
+		check_ajax_referer( 'velo_glossary_search_content', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to search glossary terms.', 'velo-glossary' ) ), 403 );
+		}
+
+		$term            = isset( $_GET['term'] ) ? sanitize_text_field( wp_unslash( $_GET['term'] ) ) : '';
+		$selected        = isset( $_GET['selected'] ) ? wp_parse_id_list( wp_unslash( $_GET['selected'] ) ) : array();
+		$current_post_id = isset( $_GET['currentPostId'] ) ? absint( $_GET['currentPostId'] ) : 0;
+		$results         = array();
+		$seen            = array();
+
+		if ( $current_post_id ) {
+			$selected[] = $current_post_id;
+		}
+
+		$selected = array_values( array_unique( array_filter( $selected ) ) );
+
+		if ( is_numeric( $term ) ) {
+			$post = get_post( absint( $term ) );
+			if ( $this->is_related_term_candidate( $post, $current_post_id ) && ! in_array( $post->ID, $selected, true ) ) {
+				$results[]         = $this->format_related_term_result( $post );
+				$seen[ $post->ID ] = true;
+			}
+		}
+
+		$query_args = array(
+			'post_type'      => 'glossary',
+			'post_status'    => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+			'posts_per_page' => 20,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+			'no_found_rows'  => true,
+		);
+
+		if ( '' !== $term ) {
+			$query_args['s'] = $term;
+		}
+
+		$posts = get_posts( $query_args );
+		foreach ( $posts as $post ) {
+			if ( isset( $seen[ $post->ID ] ) || in_array( $post->ID, $selected, true ) || ! $this->is_related_term_candidate( $post, $current_post_id ) ) {
+				continue;
+			}
+
+			$results[]         = $this->format_related_term_result( $post );
 			$seen[ $post->ID ] = true;
 		}
 
@@ -326,6 +491,57 @@ class Velo_Glossary_Admin {
 	}
 
 	/**
+	 * Save the Related Terms metabox details.
+	 *
+	 * @param int $post_id Current glossary post ID.
+	 */
+	public function save_related_terms_metabox( $post_id ) {
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		if ( ! isset( $_POST['velo_glossary_related_terms_nonce'] ) ) {
+			return;
+		}
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['velo_glossary_related_terms_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, 'velo_glossary_related_terms' ) ) {
+			return;
+		}
+
+		$related_term_ids = isset( $_POST['velo_glossary_related_term_ids'] ) ? wp_parse_id_list( wp_unslash( $_POST['velo_glossary_related_term_ids'] ) ) : array();
+		$related_term_ids = array_filter(
+			array_values( array_unique( array_filter( $related_term_ids ) ) ),
+			function( $related_term_id ) use ( $post_id ) {
+				return $this->is_related_term_candidate( get_post( $related_term_id ), $post_id );
+			}
+		);
+
+		$this->sync_related_term_ids( $post_id, $related_term_ids );
+	}
+
+	/**
+	 * Remove deleted glossary entries from related term relationships.
+	 *
+	 * @param int     $post_id Deleted post ID.
+	 * @param WP_Post $post Deleted post object.
+	 */
+	public function remove_deleted_glossary_term_relationships( $post_id, $post ) {
+		if ( ! $post instanceof WP_Post || 'glossary' !== $post->post_type ) {
+			return;
+		}
+
+		foreach ( Velo_Glossary::get_related_term_ids( $post_id ) as $related_id ) {
+			$related_ids = array_diff( Velo_Glossary::get_related_term_ids( $related_id ), array( absint( $post_id ) ) );
+			$this->replace_related_term_meta( $related_id, $related_ids );
+		}
+	}
+
+	/**
 	 * Get post types that glossary entries can be associated with.
 	 *
 	 * @return array
@@ -364,6 +580,38 @@ class Velo_Glossary_Admin {
 	}
 
 	/**
+	 * Get related glossary term posts for a glossary entry.
+	 *
+	 * @param int $glossary_id Glossary post ID.
+	 * @return WP_Post[]
+	 */
+	protected function get_related_term_posts( $glossary_id ) {
+		$related_term_ids = Velo_Glossary::get_related_term_ids( $glossary_id );
+		if ( ! $related_term_ids ) {
+			return array();
+		}
+
+		$posts = get_posts(
+			array(
+				'post_type'      => 'glossary',
+				'post_status'    => 'any',
+				'post__in'       => $related_term_ids,
+				'orderby'        => 'post__in',
+				'posts_per_page' => -1,
+			)
+		);
+
+		return array_values(
+			array_filter(
+				$posts,
+				function( $post ) use ( $glossary_id ) {
+					return $this->is_related_term_candidate( $post, $glossary_id );
+				}
+			)
+		);
+	}
+
+	/**
 	 * Render one selected associated content row.
 	 *
 	 * @param WP_Post $post Associated content post.
@@ -376,6 +624,23 @@ class Velo_Glossary_Admin {
 			<span class="velo-glossary-associated-content-meta"><?php echo esc_html( $result['meta'] ); ?></span>
 			<button type="button" class="button-link-delete velo-glossary-associated-content-remove"><?php echo esc_html( $result['removeLabel'] ); ?></button>
 			<input type="hidden" name="velo_glossary_associated_post_ids[]" value="<?php echo esc_attr( $result['id'] ); ?>" />
+		</li>
+		<?php
+	}
+
+	/**
+	 * Render one selected related term row.
+	 *
+	 * @param WP_Post $post Related glossary term post.
+	 */
+	protected function render_related_term_item( $post ) {
+		$result = $this->format_related_term_result( $post );
+		?>
+		<li class="velo-glossary-related-terms-item" data-post-id="<?php echo esc_attr( $result['id'] ); ?>">
+			<span class="velo-glossary-related-terms-title"><?php echo esc_html( $result['title'] ); ?></span>
+			<span class="velo-glossary-related-terms-meta"><?php echo esc_html( $result['meta'] ); ?></span>
+			<button type="button" class="button-link-delete velo-glossary-related-terms-remove"><?php echo esc_html( $result['removeLabel'] ); ?></button>
+			<input type="hidden" name="velo_glossary_related_term_ids[]" value="<?php echo esc_attr( $result['id'] ); ?>" />
 		</li>
 		<?php
 	}
@@ -416,6 +681,36 @@ class Velo_Glossary_Admin {
 	}
 
 	/**
+	 * Format a glossary term for the related terms picker.
+	 *
+	 * @param WP_Post $post Glossary term post.
+	 * @return array
+	 */
+	protected function format_related_term_result( $post ) {
+		$title = get_the_title( $post );
+		if ( '' === $title ) {
+			$title = __( '(no title)', 'velo-glossary' );
+		}
+
+		return array(
+			'id'          => $post->ID,
+			'label'       => sprintf(
+				/* translators: 1: glossary term title, 2: post ID. */
+				__( '%1$s (Glossary term, ID %2$d)', 'velo-glossary' ),
+				$title,
+				$post->ID
+			),
+			'title'       => $title,
+			'meta'        => sprintf(
+				/* translators: %d: post ID. */
+				__( 'Glossary term ID %d', 'velo-glossary' ),
+				$post->ID
+			),
+			'removeLabel' => __( 'Remove', 'velo-glossary' ),
+		);
+	}
+
+	/**
 	 * Determine whether a post can be associated with a glossary entry.
 	 *
 	 * @param WP_Post $post Post object.
@@ -432,5 +727,73 @@ class Velo_Glossary_Admin {
 		}
 
 		return current_user_can( 'edit_post', $post->ID );
+	}
+
+	/**
+	 * Determine whether a post can be related to a glossary entry.
+	 *
+	 * @param WP_Post|null $post Current candidate post.
+	 * @param int          $current_post_id Current glossary post ID.
+	 * @return bool
+	 */
+	protected function is_related_term_candidate( $post, $current_post_id = 0 ) {
+		if ( ! $post instanceof WP_Post || 'glossary' !== $post->post_type ) {
+			return false;
+		}
+
+		if ( $current_post_id && absint( $post->ID ) === absint( $current_post_id ) ) {
+			return false;
+		}
+
+		return current_user_can( 'edit_post', $post->ID );
+	}
+
+	/**
+	 * Save related term IDs and mirror the relationship on the related terms.
+	 *
+	 * @param int   $post_id Current glossary post ID.
+	 * @param array $new_related_ids Related glossary term IDs.
+	 */
+	protected function sync_related_term_ids( $post_id, $new_related_ids ) {
+		$post_id         = absint( $post_id );
+		$new_related_ids = array_values( array_unique( array_map( 'absint', $new_related_ids ) ) );
+		$old_related_ids = Velo_Glossary::get_related_term_ids( $post_id );
+		$all_related_ids = array_values( array_unique( array_merge( $old_related_ids, $new_related_ids ) ) );
+
+		$this->replace_related_term_meta( $post_id, $new_related_ids );
+
+		foreach ( $all_related_ids as $related_id ) {
+			$related_ids = Velo_Glossary::get_related_term_ids( $related_id );
+
+			if ( in_array( $related_id, $new_related_ids, true ) ) {
+				$related_ids[] = $post_id;
+			} else {
+				$related_ids = array_diff( $related_ids, array( $post_id ) );
+			}
+
+			$this->replace_related_term_meta( $related_id, $related_ids );
+		}
+	}
+
+	/**
+	 * Replace all related term meta rows for a glossary entry.
+	 *
+	 * @param int   $post_id Current glossary post ID.
+	 * @param array $related_ids Related glossary term IDs.
+	 */
+	protected function replace_related_term_meta( $post_id, $related_ids ) {
+		$post_id     = absint( $post_id );
+		$related_ids = array_filter(
+			array_values( array_unique( array_map( 'absint', $related_ids ) ) ),
+			function( $related_id ) use ( $post_id ) {
+				return $related_id && $related_id !== $post_id && 'glossary' === get_post_type( $related_id );
+			}
+		);
+
+		delete_post_meta( $post_id, Velo_Glossary::RELATED_TERM_META );
+
+		foreach ( $related_ids as $related_id ) {
+			add_post_meta( $post_id, Velo_Glossary::RELATED_TERM_META, $related_id, false );
+		}
 	}
 }

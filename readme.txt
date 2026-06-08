@@ -3,7 +3,7 @@ Contributors: mixbusmarketing
 Tags: glossary
 Requires at least: 5.3.1
 Tested up to: 7.0
-Stable tag: 1.4.1
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,6 +17,8 @@ Settings are available under **Settings > Velo Glossary**. By default, Velo Glos
 
 Glossary entries can also be associated with specific posts, pages, or public custom post type entries. These associations are stored as repeatable `_velo_glossary_associated_post_id` post meta for normal `WP_Query` usage. Settings can optionally limit frontend matching to associated content, with a fallback option for unassociated terms.
 
+Glossary entries support glossary-only tags through the `velo_glossary_tag` taxonomy. Entries can also be connected to related glossary terms with repeatable `_velo_glossary_related_term_id` post meta stored bidirectionally for normal `WP_Query` usage.
+
 == Installation ==
 
 To use the plugin, install and activate it, then visit the Glossary section in your wp-admin dashboard to begin adding glossary terms. Use Settings > Velo Glossary to adjust where glossary terms are processed.
@@ -26,6 +28,10 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.5.0 =
+* Added glossary-only tags for organizing glossary entries.
+* Added bidirectional related glossary terms for builder-friendly queries.
 
 = 1.4.1 =
 * Scoped tooltip styling to the Velo Glossary Tippy theme and BEM classes.

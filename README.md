@@ -14,6 +14,12 @@ Glossary entries include an **Associated Content** metabox. Use it to connect a 
 
 The **Term Associations** settings are display rules only. By default, associations are saved but glossary matching remains global. Enable **Only show glossary terms on content they are associated with** to restrict matches to the current content item. Enable the fallback setting if terms with no associations should continue to appear everywhere while restriction mode is active.
 
+## Tags and Related Terms
+
+Glossary entries support a dedicated `velo_glossary_tag` taxonomy named **Glossary Tags**. This keeps glossary organization separate from normal WordPress post tags while still supporting standard taxonomy queries.
+
+Glossary entries can also be connected to other glossary entries through the **Related Terms** metabox. Related terms are stored as repeatable `_velo_glossary_related_term_id` post meta rows and mirrored both ways, so a relationship between term A and term B can be queried from either term.
+
 ## Dependencies
 
 The plugin ships browser-ready assets from:

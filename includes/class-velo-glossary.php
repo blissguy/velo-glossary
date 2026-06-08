@@ -8,6 +8,8 @@ defined( 'ABSPATH' ) || exit;
 
 class Velo_Glossary {
 	const ASSOCIATED_POST_META = '_velo_glossary_associated_post_id';
+	const RELATED_TERM_META    = '_velo_glossary_related_term_id';
+	const TAG_TAXONOMY         = 'velo_glossary_tag';
 
 	private $cache_group   = 'velo-glossary';
 	private $cache_version = 4;
@@ -210,6 +212,25 @@ class Velo_Glossary {
 		$post_ids = array_filter( $post_ids );
 
 		return array_values( array_unique( $post_ids ) );
+	}
+
+	/**
+	 * Get glossary entry IDs related to another glossary entry.
+	 *
+	 * @param int $glossary_id Glossary post ID.
+	 * @return array
+	 */
+	public static function get_related_term_ids( $glossary_id ) {
+		$term_ids = get_post_meta( $glossary_id, self::RELATED_TERM_META, false );
+		$term_ids = array_map( 'absint', $term_ids );
+		$term_ids = array_filter(
+			$term_ids,
+			function( $term_id ) use ( $glossary_id ) {
+				return $term_id && $term_id !== absint( $glossary_id ) && 'glossary' === get_post_type( $term_id );
+			}
+		);
+
+		return array_values( array_unique( $term_ids ) );
 	}
 
 	/**

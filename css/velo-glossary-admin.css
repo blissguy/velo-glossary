@@ -1,14 +1,17 @@
-.velo-glossary-content-picker label {
+.velo-glossary-content-picker label,
+.velo-glossary-related-terms-picker label {
 	display: block;
 	font-weight: 600;
 	margin-bottom: 4px;
 }
 
-.velo-glossary-associated-content-list {
+.velo-glossary-associated-content-list,
+.velo-glossary-related-terms-list {
 	margin: 12px 0 0;
 }
 
-.velo-glossary-associated-content-item {
+.velo-glossary-associated-content-item,
+.velo-glossary-related-terms-item {
 	align-items: center;
 	background: #fff;
 	border: 1px solid #c3c4c7;
@@ -19,16 +22,19 @@
 	padding: 8px 10px;
 }
 
-.velo-glossary-associated-content-title {
+.velo-glossary-associated-content-title,
+.velo-glossary-related-terms-title {
 	font-weight: 600;
 }
 
-.velo-glossary-associated-content-meta {
+.velo-glossary-associated-content-meta,
+.velo-glossary-related-terms-meta {
 	color: #646970;
 	flex: 1;
 }
 
-.velo-glossary-associated-content-remove {
+.velo-glossary-associated-content-remove,
+.velo-glossary-related-terms-remove {
 	white-space: nowrap;
 }
 
