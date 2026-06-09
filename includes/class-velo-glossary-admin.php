@@ -207,7 +207,7 @@ class Velo_Glossary_Admin {
 
 		wp_nonce_field( 'velo_glossary_associations', 'velo_glossary_associations_nonce' );
 		?>
-		<p><?php esc_html_e( 'Associate this glossary entry with specific content. These relationships remain available for custom queries and can optionally control where the term appears.', 'velo-glossary' ); ?></p>
+		<p><?php esc_html_e( 'Associate this glossary entry with specific content.', 'velo-glossary' ); ?></p>
 		<div class="velo-glossary-content-picker">
 			<label for="velo-glossary-associated-content-search"><?php esc_html_e( 'Search content', 'velo-glossary' ); ?></label>
 			<input
@@ -240,7 +240,7 @@ class Velo_Glossary_Admin {
 
 		wp_nonce_field( 'velo_glossary_related_terms', 'velo_glossary_related_terms_nonce' );
 		?>
-		<p><?php esc_html_e( 'Connect this glossary entry to other glossary terms. Related term links are saved both ways for easier builder and WP_Query usage.', 'velo-glossary' ); ?></p>
+		<p><?php esc_html_e( 'Connect this glossary entry to other glossary terms.', 'velo-glossary' ); ?></p>
 		<div class="velo-glossary-related-terms-picker">
 			<label for="velo-glossary-related-terms-search"><?php esc_html_e( 'Search glossary terms', 'velo-glossary' ); ?></label>
 			<input
