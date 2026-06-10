@@ -38,7 +38,7 @@ class Velo_Glossary_Admin {
 			array(
 				'labels'       => array(
 					'name'               => _x( 'Glossary', 'post type general name', 'velo-glossary' ),
-					'singular_name'      => _x( 'Entry', 'post type singular name', 'velo-glossary' ),
+					'singular_name'      => _x( 'Glossary Entry', 'post type singular name', 'velo-glossary' ),
 					'add_new'            => _x( 'Add New', 'glossary entry', 'velo-glossary' ),
 					'add_new_item'       => _x( 'Add New Entry', 'glossary entry', 'velo-glossary' ),
 					'edit_item'          => _x( 'Edit Entry', 'glossary entry', 'velo-glossary' ),

@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,6 +33,9 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.7.1 =
+* Changed the glossary post type singular label to "Glossary Entry" so it is clearly identifiable in Bricks query loop and other builder post type dropdowns.
 
 = 1.7.0 =
 * Raised minimum support to WordPress 6.9 and PHP 8.0.
