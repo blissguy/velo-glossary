@@ -11,6 +11,9 @@ class Velo_Glossary_Settings {
 	const OPTION_NAME   = 'velo_glossary_settings';
 	const DISABLED_META = '_velo_glossary_disabled';
 
+	// Void elements never wrap text and never produce a close tag, so they cannot define an exclusion zone.
+	const VOID_ELEMENTS = array( 'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr' );
+
 	/**
 	 * Register settings hooks.
 	 */
@@ -61,6 +64,22 @@ class Velo_Glossary_Settings {
 			'include_comments',
 			__( 'Comments', 'velo-glossary' ),
 			array( $this, 'render_comments_field' ),
+			'velo-glossary',
+			'velo_glossary_loading'
+		);
+
+		add_settings_field(
+			'excluded_tags',
+			__( 'Excluded tags', 'velo-glossary' ),
+			array( $this, 'render_excluded_tags_field' ),
+			'velo-glossary',
+			'velo_glossary_loading'
+		);
+
+		add_settings_field(
+			'excluded_classes',
+			__( 'Excluded class names', 'velo-glossary' ),
+			array( $this, 'render_excluded_classes_field' ),
 			'velo-glossary',
 			'velo_glossary_loading'
 		);
@@ -121,7 +140,59 @@ class Velo_Glossary_Settings {
 			'include_comments'            => empty( $input['include_comments'] ) ? 0 : 1,
 			'limit_to_associated_content' => empty( $input['limit_to_associated_content'] ) ? 0 : 1,
 			'include_unassociated_terms'  => empty( $input['include_unassociated_terms'] ) ? 0 : 1,
+			'excluded_tags'               => self::sanitize_excluded_tags( isset( $input['excluded_tags'] ) ? $input['excluded_tags'] : '' ),
+			'excluded_classes'            => self::sanitize_excluded_classes( isset( $input['excluded_classes'] ) ? $input['excluded_classes'] : '' ),
 		);
+	}
+
+	/**
+	 * Split a comma- or space-separated token list into individual tokens.
+	 *
+	 * @param string|array $value Raw field value or stored token array.
+	 * @return array
+	 */
+	protected static function parse_token_list( $value ) {
+		if ( is_array( $value ) ) {
+			$value = implode( ',', $value );
+		}
+
+		return preg_split( '/[\s,]+/', trim( (string) $value ), -1, PREG_SPLIT_NO_EMPTY );
+	}
+
+	/**
+	 * Sanitize the excluded tags list down to valid, non-void HTML tag names.
+	 *
+	 * @param string|array $value Raw field value or stored token array.
+	 * @return array
+	 */
+	protected static function sanitize_excluded_tags( $value ) {
+		$tags = array();
+		foreach ( self::parse_token_list( $value ) as $tag ) {
+			$tag = strtolower( $tag );
+			if ( preg_match( '/^[a-z][a-z0-9-]*$/', $tag ) && ! in_array( $tag, self::VOID_ELEMENTS, true ) ) {
+				$tags[] = $tag;
+			}
+		}
+
+		return array_values( array_unique( $tags ) );
+	}
+
+	/**
+	 * Sanitize the excluded class names list.
+	 *
+	 * @param string|array $value Raw field value or stored token array.
+	 * @return array
+	 */
+	protected static function sanitize_excluded_classes( $value ) {
+		$classes = array();
+		foreach ( self::parse_token_list( $value ) as $class ) {
+			$class = sanitize_html_class( $class );
+			if ( '' !== $class ) {
+				$classes[] = $class;
+			}
+		}
+
+		return array_values( array_unique( $classes ) );
 	}
 
 	/**
@@ -233,6 +304,38 @@ class Velo_Glossary_Settings {
 			/>
 			<?php esc_html_e( 'Process glossary terms in comments.', 'velo-glossary' ); ?>
 		</label>
+		<?php
+	}
+
+	/**
+	 * Render the excluded tags setting.
+	 */
+	public function render_excluded_tags_field() {
+		$settings = self::get_settings();
+		?>
+		<input
+			type="text"
+			class="regular-text"
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[excluded_tags]"
+			value="<?php echo esc_attr( implode( ', ', $settings['excluded_tags'] ) ); ?>"
+		/>
+		<p class="description"><?php esc_html_e( 'Comma-separated HTML tags whose content should not be matched, e.g. h1, h2, blockquote. Links, code, and preformatted blocks are always skipped.', 'velo-glossary' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render the excluded class names setting.
+	 */
+	public function render_excluded_classes_field() {
+		$settings = self::get_settings();
+		?>
+		<input
+			type="text"
+			class="regular-text"
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[excluded_classes]"
+			value="<?php echo esc_attr( implode( ', ', $settings['excluded_classes'] ) ); ?>"
+		/>
+		<p class="description"><?php esc_html_e( 'Comma-separated class names. Elements with one of these classes, including their nested content, are not matched. Class detection only applies to elements within filtered content.', 'velo-glossary' ); ?></p>
 		<?php
 	}
 
@@ -427,6 +530,8 @@ class Velo_Glossary_Settings {
 			'include_comments'            => 1,
 			'limit_to_associated_content' => 0,
 			'include_unassociated_terms'  => 0,
+			'excluded_tags'               => array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' ),
+			'excluded_classes'            => array(),
 		);
 	}
 
@@ -451,7 +556,27 @@ class Velo_Glossary_Settings {
 			'include_comments'            => empty( $settings['include_comments'] ) ? 0 : 1,
 			'limit_to_associated_content' => empty( $settings['limit_to_associated_content'] ) ? 0 : 1,
 			'include_unassociated_terms'  => empty( $settings['include_unassociated_terms'] ) ? 0 : 1,
+			'excluded_tags'               => self::sanitize_excluded_tags( $settings['excluded_tags'] ),
+			'excluded_classes'            => self::sanitize_excluded_classes( $settings['excluded_classes'] ),
 		);
+	}
+
+	/**
+	 * Get tag names excluded from frontend term matching.
+	 *
+	 * @return array
+	 */
+	public static function get_excluded_tags() {
+		return self::get_settings()['excluded_tags'];
+	}
+
+	/**
+	 * Get class names excluded from frontend term matching.
+	 *
+	 * @return array
+	 */
+	public static function get_excluded_classes() {
+		return self::get_settings()['excluded_classes'];
 	}
 
 	/**

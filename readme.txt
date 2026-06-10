@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.7.1
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,7 +14,7 @@ Provides configurable pop-up tooltip definitions of acronyms and terms defined i
 
 Velo Glossary is maintained by MixBus Marketing at https://mixbusmarketing.com. It registers a `glossary` custom post type for defining words, acronyms, or terms. Matching terms are highlighted in enabled frontend content, with each definition displayed in a popup tooltip.
 
-Settings are available under **Settings > Velo Glossary**. By default, Velo Glossary keeps the original plugin behavior: enabled public content post types, archive/list views, and comments are processed. Individual pages, posts, and supported custom post types can be excluded from their editor sidebar.
+Settings are available under **Settings > Velo Glossary**. By default, Velo Glossary keeps the original plugin behavior: enabled public content post types, archive/list views, and comments are processed. Individual pages, posts, and supported custom post types can be excluded from their editor sidebar. Term matching can also be excluded inside specific HTML tags (headings h1-h6 by default) and inside elements carrying configured class names.
 
 Glossary entries can also be associated with specific posts, pages, or public custom post type entries. These associations are stored as repeatable `_velo_glossary_associated_post_id` post meta for normal `WP_Query` usage. Settings can optionally limit frontend matching to associated content, with a fallback option for unassociated terms.
 
@@ -33,6 +33,10 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.8.0 =
+* Added Loading Rules settings to exclude HTML tags and class names from glossary term matching. Headings (h1-h6) are excluded by default.
+* Fixed term matching not resuming after an already-linked glossary term when content filters run over previously processed content.
 
 = 1.7.1 =
 * Changed the glossary post type singular label to "Glossary Entry" so it is clearly identifiable in Bricks query loop and other builder post type dropdowns.

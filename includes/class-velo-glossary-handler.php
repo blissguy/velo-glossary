@@ -127,12 +127,22 @@ class Velo_Glossary_Handler {
 		$this->context_post_id = $post_id;
 		$textarr               = wp_html_split( $content );
 
-		$ignore_elements = array( 'code', '/code', 'a', '/a', 'pre', '/pre', 'dt', '/dt', 'option', '/option' );
-		$inside_block    = array();
+		$ignore_elements  = array( 'code', '/code', 'a', '/a', 'pre', '/pre', 'dt', '/dt', 'option', '/option' );
+		$ignore_elements  = array_merge( $ignore_elements, Velo_Glossary_Settings::get_excluded_tags() );
+		$excluded_classes = Velo_Glossary_Settings::get_excluded_classes();
+		$inside_block     = array();
+
+		// Close tags carry no class attribute, so class-excluded wrappers are
+		// tracked by tag name with a same-name depth counter instead of the stack.
+		$class_skip_tag   = '';
+		$class_skip_depth = 0;
+
 		foreach ( $textarr as &$element ) {
+			$tag_name   = '';
+			$is_end_tag = false;
+
 			if ( 0 === strpos( $element, '<' ) ) {
-				$offset     = 1;
-				$is_end_tag = false;
+				$offset = 1;
 
 				if ( 1 === strpos( $element, '/' ) ) {
 					$offset     = 2;
@@ -140,23 +150,40 @@ class Velo_Glossary_Handler {
 				}
 
 				preg_match( '/^.+(\b|\n|$)/U', substr( $element, $offset ), $matches );
-				if ( $matches && in_array( $matches[0], $ignore_elements, true ) ) {
+				$tag_name = $matches ? $matches[0] : '';
+			}
+
+			if ( $class_skip_depth > 0 ) {
+				if ( $tag_name === $class_skip_tag ) {
+					$class_skip_depth += $is_end_tag ? -1 : 1;
+				}
+
+				continue;
+			}
+
+			if ( $tag_name ) {
+				if ( in_array( $tag_name, $ignore_elements, true ) ) {
 					if ( ! $is_end_tag ) {
-						array_unshift( $inside_block, $matches[0] );
-					} elseif ( $inside_block && $matches[0] === $inside_block[0] ) {
+						array_unshift( $inside_block, $tag_name );
+					} elseif ( $inside_block && $tag_name === $inside_block[0] ) {
 						array_shift( $inside_block );
 					}
 
 					continue;
 				}
 
-				// Skip the Glossary item container span, for when the_content is run over the_content.
-				if ( $matches && 'span' === $matches[0] && $this->element_has_class( $element, 'glossary-item-container' ) ) {
-					if ( ! $is_end_tag ) {
-						array_unshift( $inside_block, $matches[0] );
-					} elseif ( $inside_block && $matches[0] === $inside_block[0] ) {
-						array_shift( $inside_block );
-					}
+				// Start a class-excluded zone. Also skips the Glossary item
+				// container span, for when the_content is run over the_content.
+				if (
+					! $is_end_tag
+					&& ! in_array( $tag_name, Velo_Glossary_Settings::VOID_ELEMENTS, true )
+					&& (
+						( $excluded_classes && $this->element_has_classes( $element, $excluded_classes ) )
+						|| ( 'span' === $tag_name && $this->element_has_class( $element, 'glossary-item-container' ) )
+					)
+				) {
+					$class_skip_tag   = $tag_name;
+					$class_skip_depth = 1;
 
 					continue;
 				}
@@ -189,5 +216,22 @@ class Velo_Glossary_Handler {
 		$class_name = preg_quote( $class_name, '/' );
 
 		return (bool) preg_match( '/\sclass=(["\'])(?=[^"\']*\b' . $class_name . '\b)[^"\']*\1/i', $element );
+	}
+
+	/**
+	 * Determine whether an HTML element has any of the given class tokens.
+	 *
+	 * @param string $element HTML element fragment.
+	 * @param array  $class_names Class names to search for.
+	 * @return bool
+	 */
+	protected function element_has_classes( $element, $class_names ) {
+		foreach ( $class_names as $class_name ) {
+			if ( $this->element_has_class( $element, $class_name ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
