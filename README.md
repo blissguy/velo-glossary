@@ -8,6 +8,12 @@ Go to **Settings > Velo Glossary** to choose which public post types should use 
 
 Each supported content editor also gets a **Velo Glossary** side metabox. Check **Disable Velo Glossary on this content** to exclude one page, post, or custom post from glossary processing and hovercard asset loading.
 
+## Frontend URLs
+
+Go to **Settings > Velo Glossary** to control whether glossary entries and glossary-only taxonomy terms have public frontend URLs. Glossary entry single pages and glossary tag archives are disabled by default, while entries and tags remain available for admin screens, REST, builders, and custom queries.
+
+Enable **Glossary entry single pages** when glossary entries should have direct public URLs. Enable **Glossary tag archives** when glossary tags should resolve as public archive URLs such as `?velo_glossary_tag=analysis`.
+
 ## Term Associations
 
 Glossary entries include an **Associated Content** metabox. Use it to connect a term to related posts, pages, or public custom post type entries. Associations are stored as repeatable `_velo_glossary_associated_post_id` post meta on the glossary entry, so builders and custom code can query them with a normal `WP_Query` meta query.
@@ -16,7 +22,7 @@ The **Term Associations** settings are display rules only. By default, associati
 
 ## Tags and Related Terms
 
-Glossary entries support a dedicated `velo_glossary_tag` taxonomy named **Glossary Tags**. This keeps glossary organization separate from normal WordPress post tags while still supporting standard taxonomy queries.
+Glossary entries support a dedicated `velo_glossary_tag` taxonomy named **Glossary Tags**. This keeps glossary organization separate from normal WordPress post tags while still supporting standard taxonomy queries and builder term queries.
 
 Glossary entries can also be connected to other glossary entries through the **Related Terms** metabox. Related terms are stored as repeatable `_velo_glossary_related_term_id` post meta rows and mirrored both ways, so a relationship between term A and term B can be queried from either term.
 
@@ -32,7 +38,7 @@ The plugin ships browser-ready assets from:
 
 ## Releases
 
-GitHub releases are created automatically when a new version is pushed to `main`. Before pushing a release commit, make sure the `Version` header in `velo-glossary.php` and the `package.json` version match.
+GitHub releases are created automatically when a new version is pushed to `main`. Before pushing a release commit, make sure the `Version` header in `velo-glossary.php`, `readme.txt` stable tag, and the `package.json` version match.
 
 If release `vX.Y.Z` does not already exist, the workflow creates the tag, builds a WordPress-installable `velo-glossary-X.Y.Z.zip` file with the `velo-glossary/` plugin folder inside, and attaches it to the GitHub release.
 

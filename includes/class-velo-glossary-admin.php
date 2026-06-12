@@ -9,10 +9,10 @@ class Velo_Glossary_Admin {
 	 */
 	public function __construct() {
 		// Must be after Handbooks Glossary loaded on init priority 10
-		add_action( 'init', array( $this, 'register_post_type' ), 100 );
-		add_action( 'init', array( $this, 'register_glossary_taxonomy' ), 101 );
-		add_action( 'init', array( $this, 'register_association_meta' ), 102 );
-		add_action( 'init', array( $this, 'register_related_term_meta' ), 103 );
+		add_action( 'init', array( $this, 'register_post_type' ), 20 );
+		add_action( 'init', array( $this, 'register_glossary_taxonomy' ), 21 );
+		add_action( 'init', array( $this, 'register_association_meta' ), 22 );
+		add_action( 'init', array( $this, 'register_related_term_meta' ), 23 );
 
 		add_action( 'add_meta_boxes', array( $this, 'register_glossary_metaboxes' ) );
 		add_action( 'edit_form_after_title', array( $this, 'form_after_title' ) );
@@ -33,10 +33,12 @@ class Velo_Glossary_Admin {
 			return;
 		}
 
+		$enable_single_pages = Velo_Glossary_Settings::should_enable_entry_single_pages();
+
 		register_post_type(
 			'glossary',
 			array(
-				'labels'       => array(
+				'labels'             => array(
 					'name'               => _x( 'Glossary', 'post type general name', 'velo-glossary' ),
 					'singular_name'      => _x( 'Glossary Entry', 'post type singular name', 'velo-glossary' ),
 					'add_new'            => _x( 'Add New', 'glossary entry', 'velo-glossary' ),
@@ -51,11 +53,18 @@ class Velo_Glossary_Admin {
 					'menu_name'          => _x( 'Glossary', 'admin menu', 'velo-glossary' ),
 					'name_admin_bar'     => _x( 'Glossary Entry', 'add new on admin bar', 'velo-glossary' ),
 				),
-				'public'       => true,
-				'show_ui'      => true,
-				'hierarchical' => false,
-				'rewrite'      => false,
-				'supports'     => array( 'title', 'editor', 'revisions' ),
+				'public'             => true,
+				'publicly_queryable' => $enable_single_pages,
+				'show_ui'            => true,
+				'show_in_rest'       => true,
+				'hierarchical'       => false,
+				'has_archive'        => false,
+				'rewrite'            => $enable_single_pages ? array(
+					'slug'       => 'glossary',
+					'with_front' => false,
+				) : false,
+				'query_var'          => $enable_single_pages ? 'glossary' : false,
+				'supports'           => array( 'title', 'editor', 'revisions' ),
 			)
 		);
 	}
@@ -90,13 +99,14 @@ class Velo_Glossary_Admin {
 					'not_found'                  => __( 'No glossary tags found.', 'velo-glossary' ),
 					'menu_name'                  => __( 'Glossary Tags', 'velo-glossary' ),
 				),
-				'public'            => true,
-				'show_ui'           => true,
-				'show_admin_column' => true,
-				'show_in_rest'      => true,
-				'hierarchical'      => false,
-				'rewrite'           => false,
-				'query_var'         => Velo_Glossary::TAG_TAXONOMY,
+				'public'             => true,
+				'publicly_queryable' => Velo_Glossary_Settings::should_enable_tag_archives(),
+				'show_ui'            => true,
+				'show_admin_column'  => true,
+				'show_in_rest'       => true,
+				'hierarchical'       => false,
+				'rewrite'            => false,
+				'query_var'          => Velo_Glossary_Settings::should_enable_tag_archives() ? Velo_Glossary::TAG_TAXONOMY : false,
 			)
 		);
 	}

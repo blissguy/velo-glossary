@@ -10,6 +10,7 @@ defined( 'ABSPATH' ) || exit;
 class Velo_Glossary_Settings {
 	const OPTION_NAME   = 'velo_glossary_settings';
 	const DISABLED_META = '_velo_glossary_disabled';
+	const REWRITE_FLUSH_OPTION = 'velo_glossary_needs_rewrite_flush';
 
 	// Void elements never wrap text and never produce a close tag, so they cannot define an exclusion zone.
 	const VOID_ELEMENTS = array( 'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr' );
@@ -18,10 +19,12 @@ class Velo_Glossary_Settings {
 	 * Register settings hooks.
 	 */
 	public function __construct() {
+		add_action( 'init', array( $this, 'maybe_flush_rewrite_rules' ), 30 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'add_meta_boxes', array( $this, 'register_disable_metabox' ) );
 		add_action( 'save_post', array( $this, 'save_disable_metabox' ) );
+		add_action( 'update_option_' . self::OPTION_NAME, array( $this, 'queue_rewrite_flush' ), 10, 2 );
 	}
 
 	/**
@@ -106,6 +109,29 @@ class Velo_Glossary_Settings {
 			'velo-glossary',
 			'velo_glossary_associations'
 		);
+
+		add_settings_section(
+			'velo_glossary_taxonomy_urls',
+			__( 'Frontend URLs', 'velo-glossary' ),
+			array( $this, 'render_frontend_urls_section' ),
+			'velo-glossary'
+		);
+
+		add_settings_field(
+			'enable_entry_single_pages',
+			__( 'Glossary entry single pages', 'velo-glossary' ),
+			array( $this, 'render_enable_entry_single_pages_field' ),
+			'velo-glossary',
+			'velo_glossary_taxonomy_urls'
+		);
+
+		add_settings_field(
+			'enable_tag_archives',
+			__( 'Glossary tag archives', 'velo-glossary' ),
+			array( $this, 'render_enable_tag_archives_field' ),
+			'velo-glossary',
+			'velo_glossary_taxonomy_urls'
+		);
 	}
 
 	/**
@@ -140,6 +166,8 @@ class Velo_Glossary_Settings {
 			'include_comments'            => empty( $input['include_comments'] ) ? 0 : 1,
 			'limit_to_associated_content' => empty( $input['limit_to_associated_content'] ) ? 0 : 1,
 			'include_unassociated_terms'  => empty( $input['include_unassociated_terms'] ) ? 0 : 1,
+			'enable_entry_single_pages'   => empty( $input['enable_entry_single_pages'] ) ? 0 : 1,
+			'enable_tag_archives'         => empty( $input['enable_tag_archives'] ) ? 0 : 1,
 			'excluded_tags'               => self::sanitize_excluded_tags( isset( $input['excluded_tags'] ) ? $input['excluded_tags'] : '' ),
 			'excluded_classes'            => self::sanitize_excluded_classes( isset( $input['excluded_classes'] ) ? $input['excluded_classes'] : '' ),
 		);
@@ -238,6 +266,13 @@ class Velo_Glossary_Settings {
 			);
 			echo '</p></div>';
 		}
+	}
+
+	/**
+	 * Render the frontend URLs section description.
+	 */
+	public function render_frontend_urls_section() {
+		echo '<p>' . esc_html__( 'Control whether glossary entries and glossary-only taxonomies should be directly accessible on the frontend. Disabling these URLs keeps entries and tags available in admin screens, REST, and builders.', 'velo-glossary' ) . '</p>';
 	}
 
 	/**
@@ -372,6 +407,44 @@ class Velo_Glossary_Settings {
 			/>
 			<?php esc_html_e( 'When limiting by association, still show glossary terms that do not have associated content everywhere.', 'velo-glossary' ); ?>
 		</label>
+		<?php
+	}
+
+	/**
+	 * Render the glossary entry single pages setting.
+	 */
+	public function render_enable_entry_single_pages_field() {
+		$settings = self::get_settings();
+		?>
+		<label>
+			<input
+				type="checkbox"
+				name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_entry_single_pages]"
+				value="1"
+				<?php checked( $settings['enable_entry_single_pages'] ); ?>
+			/>
+			<?php esc_html_e( 'Enable public single pages for glossary entries.', 'velo-glossary' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'Leave this off when glossary entries are only queried into custom frontend layouts.', 'velo-glossary' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render the glossary tag archives setting.
+	 */
+	public function render_enable_tag_archives_field() {
+		$settings = self::get_settings();
+		?>
+		<label>
+			<input
+				type="checkbox"
+				name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_tag_archives]"
+				value="1"
+				<?php checked( $settings['enable_tag_archives'] ); ?>
+			/>
+			<?php esc_html_e( 'Enable public glossary tag archive URLs such as ?velo_glossary_tag=analysis.', 'velo-glossary' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'Leave this off when glossary tags are only for organizing entries or builder queries.', 'velo-glossary' ); ?></p>
 		<?php
 	}
 
@@ -530,6 +603,8 @@ class Velo_Glossary_Settings {
 			'include_comments'            => 1,
 			'limit_to_associated_content' => 0,
 			'include_unassociated_terms'  => 0,
+			'enable_entry_single_pages'   => 0,
+			'enable_tag_archives'         => 0,
 			'excluded_tags'               => array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' ),
 			'excluded_classes'            => array(),
 		);
@@ -556,6 +631,8 @@ class Velo_Glossary_Settings {
 			'include_comments'            => empty( $settings['include_comments'] ) ? 0 : 1,
 			'limit_to_associated_content' => empty( $settings['limit_to_associated_content'] ) ? 0 : 1,
 			'include_unassociated_terms'  => empty( $settings['include_unassociated_terms'] ) ? 0 : 1,
+			'enable_entry_single_pages'   => empty( $settings['enable_entry_single_pages'] ) ? 0 : 1,
+			'enable_tag_archives'         => empty( $settings['enable_tag_archives'] ) ? 0 : 1,
 			'excluded_tags'               => self::sanitize_excluded_tags( $settings['excluded_tags'] ),
 			'excluded_classes'            => self::sanitize_excluded_classes( $settings['excluded_classes'] ),
 		);
@@ -609,6 +686,55 @@ class Velo_Glossary_Settings {
 		$settings = self::get_settings();
 
 		return ! empty( $settings['limit_to_associated_content'] ) && ! empty( $settings['include_unassociated_terms'] );
+	}
+
+	/**
+	 * Determine whether glossary entries should resolve as public single pages.
+	 *
+	 * @return bool
+	 */
+	public static function should_enable_entry_single_pages() {
+		return (bool) self::get_settings()['enable_entry_single_pages'];
+	}
+
+	/**
+	 * Determine whether glossary tag archive/query URLs should resolve publicly.
+	 *
+	 * @return bool
+	 */
+	public static function should_enable_tag_archives() {
+		return (bool) self::get_settings()['enable_tag_archives'];
+	}
+
+	/**
+	 * Queue a rewrite flush when frontend URL settings change.
+	 *
+	 * @param array $old_value Previous settings.
+	 * @param array $value     New settings.
+	 */
+	public function queue_rewrite_flush( $old_value, $value ) {
+		$old_value = is_array( $old_value ) ? wp_parse_args( $old_value, self::get_default_settings() ) : self::get_default_settings();
+		$value     = is_array( $value ) ? wp_parse_args( $value, self::get_default_settings() ) : self::get_default_settings();
+
+		$url_keys = array( 'enable_entry_single_pages', 'enable_tag_archives' );
+		foreach ( $url_keys as $key ) {
+			if ( empty( $old_value[ $key ] ) !== empty( $value[ $key ] ) ) {
+				update_option( self::REWRITE_FLUSH_OPTION, 1, false );
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Flush rewrite rules after URL settings changed and post types are registered.
+	 */
+	public function maybe_flush_rewrite_rules() {
+		if ( ! get_option( self::REWRITE_FLUSH_OPTION ) ) {
+			return;
+		}
+
+		delete_option( self::REWRITE_FLUSH_OPTION );
+		flush_rewrite_rules( false );
 	}
 
 	/**

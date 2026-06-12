@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.8.0
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,8 @@ Provides configurable pop-up tooltip definitions of acronyms and terms defined i
 Velo Glossary is maintained by MixBus Marketing at https://mixbusmarketing.com. It registers a `glossary` custom post type for defining words, acronyms, or terms. Matching terms are highlighted in enabled frontend content, with each definition displayed in a popup tooltip.
 
 Settings are available under **Settings > Velo Glossary**. By default, Velo Glossary keeps the original plugin behavior: enabled public content post types, archive/list views, and comments are processed. Individual pages, posts, and supported custom post types can be excluded from their editor sidebar. Term matching can also be excluded inside specific HTML tags (headings h1-h6 by default) and inside elements carrying configured class names.
+
+Frontend URL settings control whether glossary entries have public single pages and whether glossary tag archives resolve publicly. These URLs are disabled by default while keeping glossary entries and glossary tags available for admin screens, REST, builders, and custom queries.
 
 Glossary entries can also be associated with specific posts, pages, or public custom post type entries. These associations are stored as repeatable `_velo_glossary_associated_post_id` post meta for normal `WP_Query` usage. Settings can optionally limit frontend matching to associated content, with a fallback option for unassociated terms.
 
@@ -33,6 +35,11 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.9.0 =
+* Added Frontend URLs settings for enabling glossary entry single pages and glossary tag archives only when needed.
+* Disabled glossary entry single pages and glossary tag archives by default while keeping entries and tags queryable for builders and custom code.
+* Registered glossary post types and taxonomies earlier so builder taxonomy selectors can discover Glossary Tags.
 
 = 1.8.0 =
 * Added Loading Rules settings to exclude HTML tags and class names from glossary term matching. Headings (h1-h6) are excluded by default.
