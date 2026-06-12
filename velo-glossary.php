@@ -5,7 +5,7 @@
  * Author:          MixBus Marketing
  * Author URI:      https://mixbusmarketing.com
  * Text Domain:     velo-glossary
- * Version:         1.9.2
+ * Version:         1.9.3
  * Requires at least: 6.9
  * Requires PHP:    8.0
  * License:         GPLv2 or later

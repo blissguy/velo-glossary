@@ -23,7 +23,6 @@ class Velo_Glossary_Admin {
 		add_action( 'save_post_glossary', array( $this, 'save_associations_metabox' ) );
 		add_action( 'save_post_glossary', array( $this, 'save_related_terms_metabox' ) );
 		add_action( 'before_delete_post', array( $this, 'remove_deleted_glossary_term_relationships' ), 10, 2 );
-		add_filter( 'use_block_editor_for_post_type', array( $this, 'use_classic_editor_for_glossary' ), 10, 2 );
 	}
 
 	/**
@@ -68,21 +67,6 @@ class Velo_Glossary_Admin {
 				'supports'           => array( 'title', 'editor', 'revisions' ),
 			)
 		);
-	}
-
-	/**
-	 * Keep the classic glossary edit screen so the plugin's metabox UI is visible.
-	 *
-	 * @param bool   $use_block_editor Whether the post type should use the block editor.
-	 * @param string $post_type        Post type name.
-	 * @return bool
-	 */
-	public function use_classic_editor_for_glossary( $use_block_editor, $post_type ) {
-		if ( 'glossary' === $post_type ) {
-			return false;
-		}
-
-		return $use_block_editor;
 	}
 
 	/**
@@ -177,7 +161,10 @@ class Velo_Glossary_Admin {
 			array( $this, 'alternative_names_metabox' ),
 			'glossary',
 			'advanced',
-			'high'
+			'high',
+			array(
+				'__block_editor_compatible_meta_box' => true,
+			)
 		);
 
 		add_meta_box(
@@ -186,7 +173,10 @@ class Velo_Glossary_Admin {
 			array( $this, 'associated_content_metabox' ),
 			'glossary',
 			'advanced',
-			'default'
+			'default',
+			array(
+				'__block_editor_compatible_meta_box' => true,
+			)
 		);
 
 		add_meta_box(
@@ -195,7 +185,10 @@ class Velo_Glossary_Admin {
 			array( $this, 'related_terms_metabox' ),
 			'glossary',
 			'advanced',
-			'default'
+			'default',
+			array(
+				'__block_editor_compatible_meta_box' => true,
+			)
 		);
 	}
 
@@ -205,8 +198,13 @@ class Velo_Glossary_Admin {
 	public function form_after_title() {
 		global $post, $wp_meta_boxes;
 
+		$screen = get_current_screen();
+		if ( $screen && $screen->is_block_editor() ) {
+			return;
+		}
+
 		if ( 'glossary' === $post->post_type ) {
-			do_meta_boxes( get_current_screen(), 'advanced', $post );
+			do_meta_boxes( $screen, 'advanced', $post );
 			unset( $wp_meta_boxes['glossary']['advanced'] );
 		}
 	}

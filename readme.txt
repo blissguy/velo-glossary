@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.9.2
+Stable tag: 1.9.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,9 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.9.3 =
+* Re-enabled the block editor for glossary entries and marked the Alternate Names, Associated Content, and Related Terms metaboxes as block-editor compatible.
 
 = 1.9.2 =
 * Restored the classic glossary editor screen so Alternate Names, Associated Content, and Related Terms metaboxes remain visible while keeping glossary entries available through REST.
