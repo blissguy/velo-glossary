@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.9.1
+Stable tag: 1.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,9 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.9.2 =
+* Restored the classic glossary editor screen so Alternate Names, Associated Content, and Related Terms metaboxes remain visible while keeping glossary entries available through REST.
 
 = 1.9.1 =
 * Improved GitHub release notes so the WordPress plugin details modal has clean changelog formatting even when it falls back to release metadata.
