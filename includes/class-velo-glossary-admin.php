@@ -23,6 +23,25 @@ class Velo_Glossary_Admin {
 		add_action( 'save_post_glossary', array( $this, 'save_associations_metabox' ) );
 		add_action( 'save_post_glossary', array( $this, 'save_related_terms_metabox' ) );
 		add_action( 'before_delete_post', array( $this, 'remove_deleted_glossary_term_relationships' ), 10, 2 );
+		add_filter( 'use_block_editor_for_post_type', array( $this, 'use_classic_editor_for_glossary' ), 10, 2 );
+	}
+
+	/**
+	 * Keep the classic glossary edit screen so the plugin's metabox UI is visible.
+	 *
+	 * The post type stays show_in_rest=true for builders and REST clients;
+	 * this filter only decouples the editor choice from REST availability.
+	 *
+	 * @param bool   $use_block_editor Whether the post type should use the block editor.
+	 * @param string $post_type        Post type name.
+	 * @return bool
+	 */
+	public function use_classic_editor_for_glossary( $use_block_editor, $post_type ) {
+		if ( 'glossary' === $post_type ) {
+			return false;
+		}
+
+		return $use_block_editor;
 	}
 
 	/**
@@ -38,7 +57,7 @@ class Velo_Glossary_Admin {
 		register_post_type(
 			'glossary',
 			array(
-				'labels'             => array(
+				'labels'              => array(
 					'name'               => _x( 'Glossary', 'post type general name', 'velo-glossary' ),
 					'singular_name'      => _x( 'Glossary Entry', 'post type singular name', 'velo-glossary' ),
 					'add_new'            => _x( 'Add New', 'glossary entry', 'velo-glossary' ),
@@ -53,18 +72,20 @@ class Velo_Glossary_Admin {
 					'menu_name'          => _x( 'Glossary', 'admin menu', 'velo-glossary' ),
 					'name_admin_bar'     => _x( 'Glossary Entry', 'add new on admin bar', 'velo-glossary' ),
 				),
-				'public'             => true,
-				'publicly_queryable' => $enable_single_pages,
-				'show_ui'            => true,
-				'show_in_rest'       => true,
-				'hierarchical'       => false,
-				'has_archive'        => false,
-				'rewrite'            => $enable_single_pages ? array(
+				'public'              => true,
+				'publicly_queryable'  => $enable_single_pages,
+				// Without single pages, search results would link to 404s.
+				'exclude_from_search' => ! $enable_single_pages,
+				'show_ui'             => true,
+				'show_in_rest'        => true,
+				'hierarchical'        => false,
+				'has_archive'         => false,
+				'rewrite'             => $enable_single_pages ? array(
 					'slug'       => 'glossary',
 					'with_front' => false,
 				) : false,
-				'query_var'          => $enable_single_pages ? 'glossary' : false,
-				'supports'           => array( 'title', 'editor', 'revisions' ),
+				'query_var'           => $enable_single_pages ? 'glossary' : false,
+				'supports'            => array( 'title', 'editor', 'revisions' ),
 			)
 		);
 	}
