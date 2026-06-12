@@ -40,6 +40,6 @@ The plugin ships browser-ready assets from:
 
 GitHub releases are created automatically when a new version is pushed to `main`. Before pushing a release commit, make sure the `Version` header in `velo-glossary.php`, `readme.txt` stable tag, and the `package.json` version match.
 
-If release `vX.Y.Z` does not already exist, the workflow creates the tag, builds a WordPress-installable `velo-glossary-X.Y.Z.zip` file with the `velo-glossary/` plugin folder inside, and attaches it to the GitHub release.
+If release `vX.Y.Z` does not already exist, the workflow creates the tag, builds a WordPress-installable `velo-glossary-X.Y.Z.zip` file with the `velo-glossary/` plugin folder inside, extracts the matching changelog entry from `readme.txt` into the GitHub release notes, and attaches the ZIP to the release.
 
 Installed copies use Plugin Update Checker to read GitHub releases from `blissguy/velo-glossary` and install the attached release ZIP through the normal WordPress updates UI.
