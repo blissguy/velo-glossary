@@ -4,13 +4,13 @@ Velo Glossary is a [MixBus Marketing](https://mixbusmarketing.com)-maintained fo
 
 ## Loading Rules
 
-Go to **Settings > Velo Glossary** to choose which public post types should use glossary hovercards. Archive/list views and comments are enabled by default to preserve the original plugin behavior.
+Go to **Glossary > Settings** to choose which public post types should use glossary hovercards. Archive/list views and comments are enabled by default to preserve the original plugin behavior.
 
 Each supported content editor also gets a **Velo Glossary** side metabox. Check **Disable Velo Glossary on this content** to exclude one page, post, or custom post from glossary processing and hovercard asset loading.
 
 ## Frontend URLs
 
-Go to **Settings > Velo Glossary** to control whether glossary entries and glossary-only taxonomy terms have public frontend URLs. Glossary entry single pages and glossary tag archives are disabled by default, while entries and tags remain available for admin screens, REST, builders, and custom queries.
+Go to **Glossary > Settings** to control whether glossary entries and glossary-only taxonomy terms have public frontend URLs. Glossary entry single pages and glossary tag archives are disabled by default, while entries and tags remain available for admin screens, REST, builders, and custom queries.
 
 Enable **Glossary entry single pages** when glossary entries should have direct public URLs. Enable **Glossary tag archives** when glossary tags should resolve as public archive URLs such as `?velo_glossary_tag=analysis`.
 
