@@ -105,13 +105,29 @@ class Velo_Glossary_Handler {
 	}
 
 	/**
+	 * Link glossary terms within an HTML fragment rendered outside the_content.
+	 *
+	 * Builders render each element separately, so the processed-term registry
+	 * carries over between calls. Without that, every fragment would link its own
+	 * first occurrence and a term would repeat all the way down the page.
+	 *
+	 * @param string   $html The HTML fragment.
+	 * @param int|null $post_id Current content post ID.
+	 * @return string The linked fragment.
+	 */
+	public function link_fragment( $html, $post_id = null ) {
+		return $this->link_glossary_terms( $html, $post_id, true );
+	}
+
+	/**
 	 * Link glossary terms within a string.
 	 *
 	 * @param string $content The content.
 	 * @param int|null $post_id Current content post ID.
+	 * @param bool $keep_processed Carry the processed-term registry over from the previous call.
 	 * @return string The linked content.
 	 */
-	protected function link_glossary_terms( $content, $post_id = null ) {
+	protected function link_glossary_terms( $content, $post_id = null, $keep_processed = false ) {
 		if ( Velo_Glossary_Settings::should_limit_terms_to_associations() && ! $post_id ) {
 			return $content;
 		}
@@ -122,8 +138,12 @@ class Velo_Glossary_Handler {
 		}
 
 		// Used for creating a unique ID to keep track of replacements in a single post/comment
-		$this->content         = $content;
-		$this->processed       = array();
+		$this->content = $content;
+
+		if ( ! $keep_processed || ! is_array( $this->processed ) ) {
+			$this->processed = array();
+		}
+
 		$this->context_post_id = $post_id;
 		$textarr               = wp_html_split( $content );
 
