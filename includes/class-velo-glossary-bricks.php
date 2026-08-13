@@ -2,24 +2,21 @@
 /**
  * Bricks Builder integration.
  *
- * Bricks text elements store and render their own markup, and only the Post
- * Content element runs the_content. Terms written directly into a text element
- * are therefore never linked, so the rendered element output is filtered here
+ * Bricks elements store and render their own markup, and only the Post Content
+ * element runs the_content. Terms written directly into a Bricks element are
+ * therefore never linked, so the rendered element output is filtered here
  * instead.
+ *
+ * Only outermost elements are processed. Bricks renders children first and
+ * embeds their output in the parent, so the outermost element carries the whole
+ * subtree in one string. That is what the excluded tag and excluded class rules
+ * need: a wrapper's class only excludes the text inside it when the wrapper and
+ * the text are scanned together, exactly as they are under the_content.
  */
 
 defined( 'ABSPATH' ) || exit;
 
 class Velo_Glossary_Bricks {
-	/**
-	 * Bricks element names processed by default.
-	 *
-	 * Leaf prose elements only. Layout elements re-render their children's markup
-	 * as part of their own output, so processing them would walk the same text
-	 * twice.
-	 */
-	const DEFAULT_ELEMENTS = array( 'text', 'text-basic' );
-
 	/**
 	 * Shared handler used for the frontend content filters.
 	 *
@@ -37,7 +34,7 @@ class Velo_Glossary_Bricks {
 	}
 
 	/**
-	 * Link glossary terms in the rendered output of a supported Bricks element.
+	 * Link glossary terms in the rendered output of a Bricks element.
 	 *
 	 * @param string $html Rendered element HTML.
 	 * @param object $element_instance Bricks element instance.
@@ -55,7 +52,7 @@ class Velo_Glossary_Bricks {
 			return $html;
 		}
 
-		if ( ! $this->is_supported_element( $element_instance ) ) {
+		if ( ! $this->should_process_element( $element_instance ) ) {
 			return $html;
 		}
 
@@ -75,24 +72,51 @@ class Velo_Glossary_Bricks {
 	 * @param object $element_instance Bricks element instance.
 	 * @return bool
 	 */
-	protected function is_supported_element( $element_instance ) {
-		$element_name = isset( $element_instance->name ) ? (string) $element_instance->name : '';
-		if ( '' === $element_name ) {
+	protected function should_process_element( $element_instance ) {
+		$should_process = $this->is_outermost_element( $element_instance ) && $this->is_content_area();
+
+		/**
+		 * Filter whether Velo Glossary links terms in a Bricks element's output.
+		 *
+		 * Only outermost elements are processed by default. Opting a nested element
+		 * in means its text is scanned without its ancestors, so excluded class names
+		 * on a wrapper around it no longer apply, and its parent scans the same text
+		 * again afterwards.
+		 *
+		 * @param bool   $should_process Whether to link terms in this element.
+		 * @param object $element_instance Bricks element instance being rendered.
+		 */
+		return (bool) apply_filters( 'velo_glossary_bricks_process_element', $should_process, $element_instance );
+	}
+
+	/**
+	 * Determine whether an element sits at the top of its render area.
+	 *
+	 * @param object $element_instance Bricks element instance.
+	 * @return bool
+	 */
+	protected function is_outermost_element( $element_instance ) {
+		if ( ! isset( $element_instance->element ) || ! is_array( $element_instance->element ) ) {
 			return false;
 		}
 
-		/**
-		 * Filter the Bricks element names Velo Glossary links terms in.
-		 *
-		 * Adding layout elements that render nested children is not supported: their
-		 * output already contains the processed markup of every element inside them.
-		 *
-		 * @param array  $element_names Bricks element names.
-		 * @param object $element_instance Bricks element instance being rendered.
-		 */
-		$element_names = apply_filters( 'velo_glossary_bricks_elements', self::DEFAULT_ELEMENTS, $element_instance );
+		return empty( $element_instance->element['parent'] );
+	}
 
-		return in_array( $element_name, (array) $element_names, true );
+	/**
+	 * Determine whether Bricks is rendering the content area.
+	 *
+	 * Header and footer templates carry navigation and other chrome that repeats on
+	 * every page, so terms are not linked there.
+	 *
+	 * @return bool
+	 */
+	protected function is_content_area() {
+		if ( ! class_exists( '\Bricks\Frontend' ) ) {
+			return false;
+		}
+
+		return 'content' === \Bricks\Frontend::$area;
 	}
 
 	/**
