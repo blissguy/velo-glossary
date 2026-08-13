@@ -24,6 +24,7 @@ require_once __DIR__ . '/includes/class-velo-glossary-csv.php';
 require_once __DIR__ . '/includes/class-velo-glossary-abilities.php';
 require_once __DIR__ . '/includes/class-velo-glossary-hovercards.php';
 require_once __DIR__ . '/includes/class-velo-glossary-handler.php';
+require_once __DIR__ . '/includes/class-velo-glossary-bricks.php';
 require_once __DIR__ . '/includes/class-velo-glossary-updater.php';
 
 new Velo_Glossary_Updater( __FILE__ );
@@ -32,4 +33,6 @@ new Velo_Glossary_Admin();
 new Velo_Glossary_CSV();
 new Velo_Glossary_Abilities();
 new Velo_Glossary_Hovercards();
-new Velo_Glossary_Handler();
+
+// Shared so builder-rendered elements and the_content link each term once per request.
+new Velo_Glossary_Bricks( new Velo_Glossary_Handler() );
