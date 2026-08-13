@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.9.4
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,7 +14,7 @@ Provides configurable pop-up tooltip definitions of acronyms and terms defined i
 
 Velo Glossary is maintained by MixBus Marketing at https://mixbusmarketing.com. It registers a `glossary` custom post type for defining words, acronyms, or terms. Matching terms are highlighted in enabled frontend content, with each definition displayed in a popup tooltip.
 
-Settings are available under **Settings > Velo Glossary**. By default, Velo Glossary keeps the original plugin behavior: enabled public content post types, archive/list views, and comments are processed. Individual pages, posts, and supported custom post types can be excluded from their editor sidebar. Term matching can also be excluded inside specific HTML tags (headings h1-h6 by default) and inside elements carrying configured class names.
+Settings are available under **Glossary > Settings**. By default, Velo Glossary keeps the original plugin behavior: enabled public content post types, archive/list views, and comments are processed. Individual pages, posts, and supported custom post types can be excluded from their editor sidebar. Term matching can also be excluded inside specific HTML tags (headings h1-h6 by default) and inside elements carrying configured class names.
 
 Frontend URL settings control whether glossary entries have public single pages and whether glossary tag archives resolve publicly. These URLs are disabled by default while keeping glossary entries and glossary tags available for admin screens, REST, builders, and custom queries.
 
@@ -22,19 +22,25 @@ Glossary entries can also be associated with specific posts, pages, or public cu
 
 Glossary entries support glossary-only tags through the `velo_glossary_tag` taxonomy. Entries can also be connected to related glossary terms with repeatable `_velo_glossary_related_term_id` post meta stored bidirectionally for normal `WP_Query` usage.
 
-CSV tools are available under Settings > Velo Glossary. Administrators can download a sample template, export current glossary entries, upload a CSV for preview, and confirm an import that creates or updates terms by exact title.
+CSV tools are available under Glossary > Settings. Administrators can download a sample template, export current glossary entries, upload a CSV for preview, and confirm an import that creates or updates terms by exact title.
 
 Velo Glossary requires WordPress 6.9 or newer and PHP 8.0 or newer. It registers Abilities API tools for agent-friendly glossary term listing, retrieval, creation, updating, and trashing. CSV import/export remains admin UI only.
 
 == Installation ==
 
-To use the plugin, install and activate it, then visit the Glossary section in your wp-admin dashboard to begin adding glossary terms. Use Settings > Velo Glossary to adjust where glossary terms are processed.
+To use the plugin, install and activate it, then visit the Glossary section in your wp-admin dashboard to begin adding glossary terms. Use Glossary > Settings to adjust where glossary terms are processed.
 
 == Screenshots ==
 
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.10.0 =
+* Added glossary term linking inside Bricks text elements. Bricks renders its own markup and only its Post Content element runs the_content, so terms written directly into a text element were never linked and no hovercard appeared. Scoped to the text and text-basic elements, filterable through velo_glossary_bricks_elements.
+* Linked each term once per page rather than once per element, so a term repeated across several Bricks elements is only highlighted on its first occurrence.
+* Skipped term linking inside the Bricks builder. The builder saves the markup it renders, and the frontend script removes the definition from the page on load, so a saved copy produced an empty hovercard.
+* Moved the settings page from Settings > Velo Glossary to Glossary > Settings, alongside the glossary entries it configures. Saved settings are unchanged.
 
 = 1.9.4 =
 * Restored the classic editor for glossary entries so the Alternate Names, Associated Content, and Related Terms metaboxes render below the title as before 1.9.0, while keeping entries available through REST for builders.
