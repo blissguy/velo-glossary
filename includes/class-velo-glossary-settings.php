@@ -12,6 +12,10 @@ class Velo_Glossary_Settings {
 	const DISABLED_META = '_velo_glossary_disabled';
 	const REWRITE_FLUSH_OPTION = 'velo_glossary_needs_rewrite_flush';
 
+	// Settings live under the Glossary post type menu, not Settings.
+	const MENU_PARENT = 'edit.php?post_type=glossary';
+	const MENU_SLUG   = 'velo-glossary';
+
 	// Void elements never wrap text and never produce a close tag, so they cannot define an exclusion zone.
 	const VOID_ELEMENTS = array( 'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr' );
 
@@ -135,16 +139,30 @@ class Velo_Glossary_Settings {
 	}
 
 	/**
-	 * Add the settings page under Settings.
+	 * Add the settings page under the Glossary menu.
 	 */
 	public function add_settings_page() {
-		add_options_page(
-			__( 'Velo Glossary', 'velo-glossary' ),
-			__( 'Velo Glossary', 'velo-glossary' ),
+		add_submenu_page(
+			self::MENU_PARENT,
+			__( 'Velo Glossary Settings', 'velo-glossary' ),
+			__( 'Settings', 'velo-glossary' ),
 			'manage_options',
-			'velo-glossary',
+			self::MENU_SLUG,
 			array( $this, 'render_settings_page' )
 		);
+	}
+
+	/**
+	 * Get the admin URL of the settings page.
+	 *
+	 * @param array $args Query args to append.
+	 * @return string
+	 */
+	public static function get_settings_page_url( $args = array() ) {
+		$url = admin_url( self::MENU_PARENT );
+		$url = add_query_arg( 'page', self::MENU_SLUG, $url );
+
+		return $args ? add_query_arg( $args, $url ) : $url;
 	}
 
 	/**

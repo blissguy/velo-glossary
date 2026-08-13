@@ -1009,7 +1009,7 @@ class Velo_Glossary_CSV {
 	 * @return string
 	 */
 	protected function get_settings_url( $args = array() ) {
-		return add_query_arg( $args, admin_url( 'options-general.php?page=velo-glossary' ) );
+		return Velo_Glossary_Settings::get_settings_page_url( $args );
 	}
 
 	/**
