@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.10.0
+Stable tag: 1.10.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,12 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.10.1 =
+* Fixed excluded class names having no effect in Bricks. A wrapper's class only excludes the text inside it when both are read together, and 1.10.0 read each text element on its own, so a class on a surrounding element never applied. Tab labels and before/after labels kept getting linked whatever was excluded.
+* Glossary terms are now matched across a whole outermost Bricks element rather than element by element, which is how excluded tags and excluded class names already behaved in regular post content.
+* Stopped linking terms in Bricks header and footer templates, so navigation and other per-page chrome is left alone.
+* Replaced the velo_glossary_bricks_elements filter with velo_glossary_bricks_process_element, which decides per element rather than by element name.
 
 = 1.10.0 =
 * Added glossary term linking inside Bricks text elements. Bricks renders its own markup and only its Post Content element runs the_content, so terms written directly into a text element were never linked and no hovercard appeared. Scoped to the text and text-basic elements, filterable through velo_glossary_bricks_elements.
