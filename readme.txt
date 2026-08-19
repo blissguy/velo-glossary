@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.10.1
+Stable tag: 1.10.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,10 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.10.2 =
+* Fixed terms being linked inside script, style and textarea. Since 1.10.0 the Bricks path scans a whole rendered element in one string, so inline scripts and styles inside it were scanned too. Linking a term in a JSON script breaks it for whatever reads it, and linking one inside a CSS rule breaks the declaration.
+* Because a term is linked only once per page, terms spent inside that markup never reached the visible text. They do now.
 
 = 1.10.1 =
 * Fixed excluded class names having no effect in Bricks. A wrapper's class only excludes the text inside it when both are read together, and 1.10.0 read each text element on its own, so a class on a surrounding element never applied. Tab labels and before/after labels kept getting linked whatever was excluded.
