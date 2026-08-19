@@ -147,7 +147,9 @@ class Velo_Glossary_Handler {
 		$this->context_post_id = $post_id;
 		$textarr               = wp_html_split( $content );
 
-		$ignore_elements  = array( 'code', '/code', 'a', '/a', 'pre', '/pre', 'dt', '/dt', 'option', '/option' );
+		// script/style/textarea hold raw text, not prose. Injecting hovercard markup
+		// there corrupts inline JSON (breaking JSON.parse), CSS and form defaults.
+		$ignore_elements  = array( 'code', '/code', 'a', '/a', 'pre', '/pre', 'dt', '/dt', 'option', '/option', 'script', '/script', 'style', '/style', 'textarea', '/textarea' );
 		$ignore_elements  = array_merge( $ignore_elements, Velo_Glossary_Settings::get_excluded_tags() );
 		$excluded_classes = Velo_Glossary_Settings::get_excluded_classes();
 		$inside_block     = array();
