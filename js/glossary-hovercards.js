@@ -5,9 +5,28 @@ jQuery( document ).ready( function ( $ ) {
 
 		var tooltipContent = $( element ).find( '.glossary-item-hidden-content' ).detach().html();
 
+		// A term with no definition is left over markup: the builder was opened on a
+		// page this script had already stripped, and the bare wrapper got saved into
+		// the element. Tippy would attach an empty card that never appears, leaving a
+		// word that looks interactive and does nothing.
+		if ( ! tooltipContent ) {
+			element.classList.remove( 'glossary-item-container', 'velo-glossary__term' );
+			element.removeAttribute( 'tabindex' );
+
+			return;
+		}
+
 		var tooltip = tippy(element, {
 			content: tooltipContent,
 			allowHTML: true,
+			// Tippy appends an interactive tippy to the reference's parent unless
+			// appendTo says otherwise, which puts the card inside the paragraph, menu
+			// or toggle holding the term. It then inherits that element's overflow
+			// clipping and width, so cards inside a collapsed menu or a narrow inline
+			// wrapper are clipped away or squeezed into an unreadable sliver.
+			appendTo: function () {
+				return document.body;
+			},
 			arrow: true,
 			theme: 'velo-glossary',
 			delay: [0, 500],

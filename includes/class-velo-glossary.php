@@ -184,13 +184,22 @@ class Velo_Glossary {
 			'|',
 			array_map(
 				function( $name ) {
-					return preg_quote( $name, '/' );
+					$quoted = preg_quote( $name, '/' );
+
+					// A name short enough to be case sensitive must not match another
+					// casing here. The match would be consumed and then rejected by
+					// get_active_item(), so "iso" in prose would silently link nothing.
+					return $this->name_is_case_sensitive( $name ) ? "(?-i:$quoted)" : $quoted;
 				},
 				$item_names
 			)
 		);
 
-		return "/\b($regex)(?![^<]*>|[.]\w)\b/i";
+		// The pattern only ever sees text nodes, never markup, because
+		// Velo_Glossary_Handler splits the HTML first. A lookahead for a closing
+		// bracket would reject every term that shares a text run with a later ">",
+		// so "Wide -> Telephoto" would link neither term.
+		return "/\b($regex)(?![.]\w)\b/i";
 	}
 
 	/**
