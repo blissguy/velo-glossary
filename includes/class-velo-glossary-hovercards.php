@@ -18,7 +18,10 @@ class Velo_Glossary_Hovercards {
 
 		wp_register_script( 'velo-glossary-popper', plugins_url( '../js/popper.min.js', __FILE__ ), array(), '2.11.8', true );
 		wp_register_script( 'velo-glossary-tippy', plugins_url( '../js/tippy.min.js', __FILE__ ), array( 'velo-glossary-popper' ), '6.3.7', true );
-		wp_register_script( 'velo-glossary-hovercards', plugins_url( '../js/glossary-hovercards.js', __FILE__ ), array( 'velo-glossary-tippy', 'jquery', 'hoverintent-js' ), '20260911', true );
+		// jQuery and hoverintent-js are no longer used. Tippy shows on mouseenter with
+		// no show delay, so hoverintent only ever called show() on a card that was
+		// already open.
+		wp_register_script( 'velo-glossary-hovercards', plugins_url( '../js/glossary-hovercards.js', __FILE__ ), array( 'velo-glossary-tippy' ), '20260912', true );
 		wp_enqueue_script( 'velo-glossary-hovercards' );
 	}
 }
