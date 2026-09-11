@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.10.2
+Stable tag: 1.10.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,13 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.10.3 =
+* Fixed hovercards that never appeared, or appeared far from the word. Tippy puts an interactive card inside the term's own parent element unless told otherwise, so a card opened from a collapsed menu or a narrow inline wrapper inherited that element's clipping and width. On one course page ten of twenty cards were clipped to nothing and one was squeezed into a sliver rendered hundreds of pixels above its term. Cards now attach to the page body.
+* Terms sharing a line with a later ">" are linked again. The matching pattern only ever sees text, never markup, but still carried a guard against matching inside a tag. "Wide -> Telephoto" linked neither term.
+* Names of three characters or fewer, such as ISO and RAW, now only match their own casing. Lowercase "iso" used to match, fail the case check and link nothing, which also blocked nothing else on the line.
+* Stopped linking terms inside button, nav, aside, header and footer. Menu labels and other chrome repeat on every page, and a term spent there is a term the reading cannot use.
+* Hovercard markup left behind by opening the builder on an already rendered page is now unwrapped rather than treated as a linked term, so the word links normally instead of showing an empty card.
 
 = 1.10.2 =
 * Fixed terms being linked inside script, style and textarea. Since 1.10.0 the Bricks path scans a whole rendered element in one string, so inline scripts and styles inside it were scanned too. Linking a term in a JSON script breaks it for whatever reads it, and linking one inside a CSS rule breaks the declaration.
