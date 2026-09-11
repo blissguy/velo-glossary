@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.10.3
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,11 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.11.0 =
+* Terms that arrive after the page loads now get a hovercard. The script ran once and never looked again, so a term in a Q&A answer, a notification or anything else rendered by script was underlined with nothing behind it. Added nodes are watched, and window.veloGlossary.initHovercards( element ) wires a subtree on demand for scripts that would rather not wait.
+* Only one definition shows at a time again, including cards opened in quick succession.
+* Dropped the jQuery and hoverintent dependencies. Cards open on mouseenter with no delay, so hoverintent only ever reopened a card that was already up.
 
 = 1.10.3 =
 * Fixed hovercards that never appeared, or appeared far from the word. Tippy puts an interactive card inside the term's own parent element unless told otherwise, so a card opened from a collapsed menu or a narrow inline wrapper inherited that element's clipping and width. On one course page ten of twenty cards were clipped to nothing and one was squeezed into a sliver rendered hundreds of pixels above its term. Cards now attach to the page body.
