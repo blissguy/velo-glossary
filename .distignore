@@ -29,6 +29,7 @@ phpcs.xml.dist
 README.md
 wp-cli.local.yml
 yarn.lock
+build
 dist
 tests
 /vendor
