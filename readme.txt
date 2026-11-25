@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.11.0
+Stable tag: 1.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,9 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 1. An example showing a tooltip with a definition for the term "meta".
 
 == Changelog ==
+
+= 1.12.0 =
+* New: a "Highlight in lessons" switch on each term. A term switched off stays in the glossary but isn't marked in lesson text, on the site or in the app.
 
 = 1.11.0 =
 * Terms that arrive after the page loads now get a hovercard. The script ran once and never looked again, so a term in a Q&A answer, a notification or anything else rendered by script was underlined with nothing behind it. Added nodes are watched, and window.veloGlossary.initHovercards( element ) wires a subtree on demand for scripts that would rather not wait.

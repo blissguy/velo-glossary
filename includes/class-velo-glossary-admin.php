@@ -13,6 +13,7 @@ class Velo_Glossary_Admin {
 		add_action( 'init', array( $this, 'register_glossary_taxonomy' ), 21 );
 		add_action( 'init', array( $this, 'register_association_meta' ), 22 );
 		add_action( 'init', array( $this, 'register_related_term_meta' ), 23 );
+		add_action( 'init', array( $this, 'register_highlight_meta' ), 24 );
 
 		add_action( 'add_meta_boxes', array( $this, 'register_glossary_metaboxes' ) );
 		add_action( 'edit_form_after_title', array( $this, 'form_after_title' ) );
@@ -22,6 +23,12 @@ class Velo_Glossary_Admin {
 		add_action( 'save_post_glossary', array( $this, 'save_alternatives_metabox' ) );
 		add_action( 'save_post_glossary', array( $this, 'save_associations_metabox' ) );
 		add_action( 'save_post_glossary', array( $this, 'save_related_terms_metabox' ) );
+		add_action( 'post_submitbox_misc_actions', array( $this, 'highlight_field' ) );
+		add_action( 'save_post_glossary', array( $this, 'save_highlight_field' ), 5 );
+		add_filter( 'manage_glossary_posts_columns', array( $this, 'add_highlight_column' ) );
+		add_action( 'manage_glossary_posts_custom_column', array( $this, 'render_highlight_column' ), 10, 2 );
+		add_action( 'quick_edit_custom_box', array( $this, 'highlight_quick_edit' ), 10, 2 );
+		add_action( 'admin_print_footer_scripts-edit.php', array( $this, 'highlight_quick_edit_script' ) );
 		add_action( 'before_delete_post', array( $this, 'remove_deleted_glossary_term_relationships' ), 10, 2 );
 		add_filter( 'use_block_editor_for_post_type', array( $this, 'use_classic_editor_for_glossary' ), 10, 2 );
 	}
@@ -170,6 +177,172 @@ class Velo_Glossary_Admin {
 				'show_in_rest'      => false,
 			)
 		);
+	}
+
+	/**
+	 * Register the highlight switch metadata.
+	 */
+	public function register_highlight_meta() {
+		register_post_meta(
+			'glossary',
+			Velo_Glossary::NO_HIGHLIGHT_META,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Set to 1 when this glossary entry is not highlighted in content.', 'velo-glossary' ),
+				'single'            => true,
+				'sanitize_callback' => static function( $value ) {
+					return $value ? '1' : '';
+				},
+				'auth_callback'     => static function( $allowed, $meta_key, $post_id ) {
+					return current_user_can( 'edit_post', $post_id );
+				},
+				'show_in_rest'      => false,
+			)
+		);
+	}
+
+	/**
+	 * Output the highlight switch in the Publish box.
+	 *
+	 * @param WP_Post $post Current post.
+	 */
+	public function highlight_field( $post ) {
+		if ( 'glossary' !== $post->post_type ) {
+			return;
+		}
+
+		wp_nonce_field( 'velo_glossary_highlight', 'velo_glossary_highlight_nonce' );
+		?>
+		<div class="misc-pub-section velo-glossary-highlight">
+			<input type="hidden" name="velo_glossary_highlight_present" value="1" />
+			<label>
+				<input type="checkbox" name="velo_glossary_highlight" value="1" <?php checked( Velo_Glossary::is_highlighted( $post->ID ) ); ?> />
+				<?php esc_html_e( 'Highlight in lessons', 'velo-glossary' ); ?>
+			</label>
+			<p class="description"><?php esc_html_e( 'When off, the term still appears in the glossary and its search.', 'velo-glossary' ); ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Save the highlight switch from the edit screen or quick edit.
+	 *
+	 * Runs before the item cache is cleared on save_post_glossary (priority 20).
+	 *
+	 * @param int $post_id Current glossary post ID.
+	 */
+	public function save_highlight_field( $post_id ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		// Bulk edit carries no nonce for this field, so it leaves the switch alone.
+		if ( ! isset( $_POST['velo_glossary_highlight_nonce'], $_POST['velo_glossary_highlight_present'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['velo_glossary_highlight_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, 'velo_glossary_highlight' ) ) {
+			return;
+		}
+
+		Velo_Glossary::set_highlighted( $post_id, ! empty( $_POST['velo_glossary_highlight'] ) );
+	}
+
+	/**
+	 * Add the highlight column to the glossary list.
+	 *
+	 * @param array $columns List columns.
+	 * @return array
+	 */
+	public function add_highlight_column( $columns ) {
+		$added = array();
+		foreach ( $columns as $key => $label ) {
+			$added[ $key ] = $label;
+			if ( 'title' === $key ) {
+				$added['velo_glossary_highlight'] = __( 'Highlight in lessons', 'velo-glossary' );
+			}
+		}
+
+		if ( ! isset( $added['velo_glossary_highlight'] ) ) {
+			$added['velo_glossary_highlight'] = __( 'Highlight in lessons', 'velo-glossary' );
+		}
+
+		return $added;
+	}
+
+	/**
+	 * Render the highlight column.
+	 *
+	 * @param string $column Column key.
+	 * @param int    $post_id Glossary post ID.
+	 */
+	public function render_highlight_column( $column, $post_id ) {
+		if ( 'velo_glossary_highlight' !== $column ) {
+			return;
+		}
+
+		$on = Velo_Glossary::is_highlighted( $post_id );
+		printf(
+			'<span class="velo-glossary-highlight-state" data-highlight="%s">%s</span>',
+			$on ? '1' : '0',
+			$on ? esc_html__( 'On', 'velo-glossary' ) : esc_html__( 'Off', 'velo-glossary' )
+		);
+	}
+
+	/**
+	 * Output the highlight switch in quick edit.
+	 *
+	 * @param string $column Column key.
+	 * @param string $post_type Post type.
+	 */
+	public function highlight_quick_edit( $column, $post_type ) {
+		if ( 'velo_glossary_highlight' !== $column || 'glossary' !== $post_type ) {
+			return;
+		}
+
+		wp_nonce_field( 'velo_glossary_highlight', 'velo_glossary_highlight_nonce' );
+		?>
+		<fieldset class="inline-edit-col-right">
+			<div class="inline-edit-col">
+				<input type="hidden" name="velo_glossary_highlight_present" value="1" />
+				<label class="alignleft">
+					<input type="checkbox" name="velo_glossary_highlight" value="1" />
+					<span class="checkbox-title"><?php esc_html_e( 'Highlight in lessons', 'velo-glossary' ); ?></span>
+				</label>
+			</div>
+		</fieldset>
+		<?php
+	}
+
+	/**
+	 * Tick the quick edit checkbox from the row's current state.
+	 */
+	public function highlight_quick_edit_script() {
+		$screen = get_current_screen();
+		if ( ! $screen || 'edit-glossary' !== $screen->id ) {
+			return;
+		}
+		?>
+		<script>
+		( function () {
+			if ( ! window.inlineEditPost ) {
+				return;
+			}
+			var edit = window.inlineEditPost.edit;
+			window.inlineEditPost.edit = function ( id ) {
+				edit.apply( this, arguments );
+				var postId = typeof id === 'object' ? this.getId( id ) : id;
+				var state = document.querySelector( '#post-' + postId + ' .velo-glossary-highlight-state' );
+				var box = document.querySelector( '#edit-' + postId + ' input[name="velo_glossary_highlight"]' );
+				if ( state && box ) {
+					box.checked = '1' === state.getAttribute( 'data-highlight' );
+				}
+			};
+		} )();
+		</script>
+		<?php
 	}
 
 	/**

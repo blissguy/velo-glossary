@@ -11,8 +11,12 @@ class Velo_Glossary {
 	const RELATED_TERM_META    = '_velo_glossary_related_term_id';
 	const TAG_TAXONOMY         = 'velo_glossary_tag';
 
+	// Set to '1' when a term is switched off for highlighting. Absent means on,
+	// so existing terms need no migration.
+	const NO_HIGHLIGHT_META = '_velo_glossary_no_highlight';
+
 	private $cache_group   = 'velo-glossary';
-	private $cache_version = 4;
+	private $cache_version = 5;
 
 	/**
 	 * Construct the Glossary object.
@@ -20,6 +24,11 @@ class Velo_Glossary {
 	public function __construct() {
 		// Clear the cache upon Glossary item being updated. Items on sub-sites will be cleared in an hour or so.
 		add_action( 'save_post_glossary', array( $this, 'clear_cache' ), 20 );
+
+		// The highlight switch can change without a post save (WP-CLI, abilities).
+		add_action( 'added_post_meta', array( $this, 'clear_cache_on_meta' ), 10, 3 );
+		add_action( 'updated_post_meta', array( $this, 'clear_cache_on_meta' ), 10, 3 );
+		add_action( 'deleted_post_meta', array( $this, 'clear_cache_on_meta' ), 10, 3 );
 	}
 
 	/**
@@ -51,6 +60,15 @@ class Velo_Glossary {
 			}
 		);
 
+		// A switched-off term can share a name with one that is on. The caller
+		// matched highlighted names only, so the highlighted entry must win.
+		usort(
+			$item,
+			function( $a, $b ) {
+				return (int) $b->highlight - (int) $a->highlight;
+			}
+		);
+
 		return array_shift( $item ) ?: false;
 	}
 
@@ -60,8 +78,33 @@ class Velo_Glossary {
 	 * @return array
 	 */
 	public function get_active_item_names( $post_id = null ) {
-		$items = $this->get_active_items( $post_id );
+		return $this->item_names( $this->get_active_items( $post_id ) );
+	}
 
+	/**
+	 * Get the names of the items that may be highlighted in content.
+	 *
+	 * @param int|null $post_id Current content post ID.
+	 * @return array
+	 */
+	public function get_highlight_item_names( $post_id = null ) {
+		$items = array_filter(
+			$this->get_active_items( $post_id ),
+			function( $item ) {
+				return $item->highlight;
+			}
+		);
+
+		return $this->item_names( $items );
+	}
+
+	/**
+	 * Flatten items into their names and alternative names.
+	 *
+	 * @param array $items Glossary items.
+	 * @return array
+	 */
+	protected function item_names( $items ) {
 		$names = array_values( wp_list_pluck( $items, 'name' ) );
 
 		// Retrieve and flatten the list of alternative names for the glossary items.
@@ -156,16 +199,20 @@ class Velo_Glossary {
 			'description'         => trim( $post->post_content ),
 			'alternatives'        => get_post_meta( $post->ID, 'alternatives', true ) ?: array(),
 			'associated_post_ids' => self::get_associated_post_ids( $post->ID ),
+			'highlight'           => self::is_highlighted( $post->ID ),
 		);
 	}
 
 	/**
-	 * Get all glossary items as a regex.
+	 * Get all glossary items that may be highlighted as a regex.
+	 *
+	 * Terms switched off for highlighting stay in the glossary but are left out
+	 * here, so neither the site nor the app API marks them in content.
 	 *
 	 * @return false|string The Regex.
 	 */
 	public function get_item_names_regex( $post_id = null ) {
-		$item_names = $this->get_active_item_names( $post_id );
+		$item_names = $this->get_highlight_item_names( $post_id );
 		if ( ! $item_names ) {
 			return false;
 		}
@@ -207,6 +254,43 @@ class Velo_Glossary {
 	 */
 	public function clear_cache() {
 		wp_cache_delete( "items-v{$this->cache_version}", $this->cache_group );
+	}
+
+	/**
+	 * Clear the item cache when a term's highlight switch changes.
+	 *
+	 * @param int|array $meta_id Meta ID(s).
+	 * @param int       $object_id Post ID.
+	 * @param string    $meta_key Meta key.
+	 */
+	public function clear_cache_on_meta( $meta_id, $object_id, $meta_key ) {
+		if ( self::NO_HIGHLIGHT_META === $meta_key ) {
+			$this->clear_cache();
+		}
+	}
+
+	/**
+	 * Whether a glossary entry is highlighted in content.
+	 *
+	 * @param int $glossary_id Glossary post ID.
+	 * @return bool
+	 */
+	public static function is_highlighted( $glossary_id ) {
+		return '1' !== (string) get_post_meta( $glossary_id, self::NO_HIGHLIGHT_META, true );
+	}
+
+	/**
+	 * Switch highlighting on or off for a glossary entry.
+	 *
+	 * @param int  $glossary_id Glossary post ID.
+	 * @param bool $highlight Whether the term is highlighted in content.
+	 */
+	public static function set_highlighted( $glossary_id, $highlight ) {
+		if ( $highlight ) {
+			delete_post_meta( $glossary_id, self::NO_HIGHLIGHT_META );
+		} else {
+			update_post_meta( $glossary_id, self::NO_HIGHLIGHT_META, '1' );
+		}
 	}
 
 	/**
