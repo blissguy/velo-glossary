@@ -4,7 +4,7 @@ Tags: glossary
 Requires at least: 6.9
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.12.0
+Stable tag: 1.12.0-beta.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,7 +36,7 @@ To use the plugin, install and activate it, then visit the Glossary section in y
 
 == Changelog ==
 
-= 1.12.0 =
+= 1.12.0-beta.1 =
 * New: a "Highlight in lessons" switch on each term. A term switched off stays in the glossary but isn't marked in lesson text, on the site or in the app.
 
 = 1.11.0 =
